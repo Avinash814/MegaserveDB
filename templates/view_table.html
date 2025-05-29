@@ -1,0 +1,673 @@
+{% extends "base.html" %}
+
+{% block title %}View Table{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Table Title -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mt-2 mb-0">View Table: {{ table }}</h4>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="table-container">
+        <!-- Search Box, Date Range, Download, and Toggle Buttons (inline) -->
+        <div class="mb-2 d-flex justify-content-between align-items-center gap-3">
+            <!-- Search Form (No Submit Button, Dynamic Search) -->
+            <form method="GET" action="{{ url_for('view_table', table=table) }}" class="flex-grow-1 me-2" id="searchForm">
+                <div class="input-group">
+                    <input type="text" class="form-control rounded-md border border-gray-300 px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" id="search_query" name="search_query" placeholder="Search..." value="{{ search_query if search_query else '' }}">
+                    <!-- Hidden inputs for server-side search -->
+                    <input type="hidden" name="from_date" id="from_date" value="{{ from_date or '' }}">
+                    <input type="hidden" name="to_date" id="to_date" value="{{ to_date or '' }}">
+                    <input type="hidden" name="page" id="page" value="{{ page }}">
+                    <input type="hidden" name="rows_per_page" id="rows_per_page" value="{{ rows_per_page }}">
+                </div>
+            </form>
+            
+            <!-- Date, Download, and Toggle Buttons -->
+            <div class="d-flex align-items-center gap-2">
+                <!-- Calendar Button with Date Range Picker -->
+                <div class="position-relative">
+                    <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white shadow-sm hover:bg-gray-100 hover:text-gray-800 h-8 w-8 rounded-md text-xs" aria-label="Calendar" type="button" id="calendarButton">
+                        <svg width="22" height="22" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-size:22px;">
+                            <path d="M3.5 1a.5.5 0 0 1 .5.5V2h7v-.5a.5.5 0 0 1 1 0V2h.5A1.5 1.5 0 0 1 14 3.5v9A1.5 1.5 0 0 1 12.5 14h-10A1.5 1.5 0 0 1 1 12.5v-9A1.5 1.5 0 0 1 2.5 2H3v-.5A.5.5 0 0 1 3.5 1zm9 3h-10A.5.5 0 0 0 2 4.5v8A.5.5 0 0 0 2.5 13h10a.5.5 0 0 0 .5-.5v-8A.5.5 0 0 0 12.5 4zM4 6h1v1H4V6zm2 0h1v1H6V6zm2 0h1v1H8V6zm-4 2h1v1H4V8zm2 0h1v1H6V8zm2 0h1v1H8V8zm-4 2h1v1H4v-1zm2 0h1v1H6v-1zm2 0h1v1H8v-1z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <input type="text" id="date_range" class="flatpickr-input position-absolute" style="opacity: 0; width: 0; height: 0;" placeholder="Select date range...">
+                </div>
+
+                {% if session['role'] == 'admin' %}
+                    <!-- Download Link for All Pages -->
+                    <a href="{{ url_for('download_table', table=table, download_all='true', from_date=from_date or '', to_date=to_date or '', search_query=search_query or '') }}" id="downloadLink" class="p-0 m-0 bg-transparent border-0 shadow-none" style="height: 32px; width: 32px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="22" height="22" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M7.50005 1.04999C7.74858 1.04999 7.95005 1.25146 7.95005 1.49999V8.41359L10.1819 6.18179C10.3576 6.00605 10.6425 6.00605 10.8182 6.18179C10.994 6.35753 10.994 6.64245 10.8182 6.81819L7.81825 9.81819C7.64251 9.99392 7.35759 9.99392 7.18185 9.81819L4.18185 6.81819C4.00611 6.64245 4.00611 6.35753 4.18185 6.18179C4.35759 6.00605 4.64251 6.00605 4.81825 6.18179L7.05005 8.41359V1.49999C7.05005 1.25146 7.25152 1.04999 7.50005 1.04999ZM2.5 10C2.77614 10 3 10.2239 3 10.5V12C3 12.5539 3.44565 13 3.99635 13H11.0012C11.5529 13 12 12.5528 12 12V10.5C12 10.2239 12.2239 10 12.5 10C12.7761 10 13 10.2239 13 10.5V12C13 13.1041 12.1062 14 11.0012 14H3.99635C2.89019 14 2 13.103 2 12V10.5C2 10.2239 2.22386 10 2.5 10Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
+                        </svg>
+                    </a>
+                {% endif %}
+                <!-- Toggle Button with Popup -->
+                <div class="position-relative">
+                    <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-white shadow-sm hover:bg-gray-100 hover:text-gray-800 h-8 w-8 rounded-md text-xs border-0" aria-label="Toggle columns" type="button" id="columnToggleButton">
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-4">
+                            <path d="M5.5 3C4.67157 3 4 3.67157 4 4.5C4 5.32843 4.67157 6 5.5 6C6.32843 6 7 5.32843 7 4.5C7 3.67157 6.32843 3 5.5 3ZM3 5C3.01671 5 3.03323 4.99918 3.04952 4.99758C3.28022 6.1399 4.28967 7 5.5 7C6.71033 7 7.71978 6.1399 7.95048 4.99758C7.96677 4.99918 7.98329 5 8 5H13.5C13.7761 5 14 4.77614 14 4.5C14 4.22386 13.7761 4 13.5 4H8C7.98329 4 7.96677 4.00082 7.95048 4.00242C7.71978 2.86009 6.71033 2 5.5 2C4.28967 2 3.28022 2.86009 3.04952 4.00242C3.03323 4.00082 3.01671 4 3 4H1.5C1.22386 4 1 4.22386 1 4.5C1 4.77614 1.22386 5 1.5 5H3ZM11.9505 10.9976C11.7198 12.1399 10.7103 13 9.5 13C8.28967 13 7.28022 12.1399 7.04952 10.9976C7.03323 10.9992 7.01671 11 7 11H1.5C1.22386 11 1 10.7761 1 10.5C1 10.2239 1.22386 10 1.5 10H7C7.01671 10 7.03323 10.0008 7.04952 10.0024C7.28022 8.8601 8.28967 8 9.5 8C10.7103 8 11.7198 8.8601 11.9505 10.0024C11.9668 10.0008 11.9833 10 12 10H13.5C13.7761 10 14 10.2239 14 10.5C14 10.7761 13.7761 11 13.5 11H12C11.9833 11 11.9668 10.9992 11.9505 10.9976ZM8 10.5C8 9.67157 8.67157 9 9.5 9C10.3284 9 11 9.67157 11 10.5C11 11.3284 10.3284 12 9.5 12C8.67157 12 8 11.3284 8 10.5Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                    <!-- Column Toggle Popup -->
+                    <div id="columnTogglePopup" class="position-absolute bg-white border border-gray-300 shadow-lg rounded-md p-3 mt-2" style="display: none; z-index: 1000; min-width: 200px; right: 0;">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input column-toggle" id="column-0" data-column="0" checked>
+                            <label class="form-check-label" for="column-0">row_id</label>
+                        </div>
+                        {% for column in columns[1:] %}
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input column-toggle" id="column-{{ loop.index }}" data-column="{{ loop.index }}" checked>
+                                <label class="form-check-label" for="column-{{ loop.index }}">{{ column }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="dataTable">
+                <thead>
+                    <!-- Column Headers -->
+                    <tr>
+                        <th data-column="0">row_id</th>
+                        {% for column in columns[1:] %}
+                            <th data-column="{{ loop.index }}">{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                    <!-- Search Row -->
+                    <tr class="search-row">
+                        <td data-column="0">
+                            <input type="text" class="column-search form-control rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" data-column="0" placeholder="Search..." value="{{ request.args.get('column_0', '') }}">
+                        </td>
+                        {% for column in columns[1:] %}
+                            <td data-column="{{ loop.index }}">
+                                {% set column_lower = column|lower %}
+                                {% if column_lower in ['algo', 'server', 'enabled', 'status', 'order_type', 'product', 'validity','strategy_tag', 'logged_in', 'sqoff_done', 'broker', 'operator', 'log_type','transaction','exchange'] %}
+                                    <div class="dropdown">
+                                        <button class="dropdown-toggle btn btn-sm btn-outline-secondary w-100" type="button" data-column="{{ loop.index }}">
+                                            Filter...
+                                        </button>
+                                        <div class="dropdown-menu p-1" data-column="{{ loop.index }}">
+                                            <div class="px-2 py-1.5 text-sm font-semibold">Filter</div>
+                                            <div role="separator" class="-mx-1 my-1 h-px bg-muted"></div>
+                                            <div class="max-h-[200px] overflow-y-auto">
+                                                <div class="dropdown-item clear-filter" data-column="{{ loop.index }}">Clear all</div>
+                                                <div role="separator" class="-mx-1 my-1 h-px bg-muted"></div>
+                                                <!-- Unique values will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <input type="text" class="column-search form-control rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" data-column="{{ loop.index }}" placeholder="Search..." value="{{ request.args.get('column_' + loop.index|string, '') }}">
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                        <tr>
+                            <td data-column="0">{{ row['row_id'] if 'row_id' in row else '' }}</td>
+                            {% for column in columns[1:] %}
+                                <td data-column="{{ loop.index }}">{{ row[column] if column in row else '' }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="pagination-controls mt-3">
+        <div>
+            <!-- Preserve all filter parameters -->
+            <input type="hidden" name="search_query" id="pagination_search_query" value="{{ search_query if search_query else '' }}">
+            <input type="hidden" name="from_date" id="pagination_from_date" value="{{ from_date if from_date else '' }}">
+            <input type="hidden" name="to_date" id="pagination_to_date" value="{{ to_date if to_date else '' }}">
+            {% for key, value in request.args.items() %}
+                {% if key.startswith('column_') %}
+                    <input type="hidden" name="{{ key }}" id="pagination_{{ key }}" value="{{ value }}">
+                {% endif %}
+            {% endfor %}
+        
+            <select id="rows_per_page_select" class="form-select d-inline-block w-auto">
+                <option value="500" {% if rows_per_page == 500 %}selected{% endif %}>500</option>
+                <option value="1000" {% if rows_per_page == 1000 %}selected{% endif %}>1000</option>
+                <option value="1500" {% if rows_per_page == 1500 %}selected{% endif %}>1500</option>
+                <option value="3000" {% if rows_per_page == 3000 %}selected{% endif %}>3000</option>
+            </select>
+            <span id="page-info" class="ms-2">Page {{ page }} of {{ total_pages }}</span>
+            <a href="#" onclick="fetchTableData(1); return false;" class="btn btn-sm btn-outline-primary {% if page <= 1 %}disabled{% endif %}" id="first-page">«</a>
+            <a href="#" onclick="fetchTableData( page - 1 ); return false;" class="btn btn-sm btn-outline-primary {% if page <= 1 %}disabled{% endif %}" id="prev-page">‹</a>
+            <a href="#" onclick="fetchTableData( page + 1 ); return false;" class="btn btn-sm btn-outline-primary {% if page >= total_pages %}disabled{% endif %}" id="next-page">›</a>
+            <a href="#" onclick="fetchTableData({{ total_pages }}); return false;" class="btn btn-sm btn-outline-primary {% if page >= total_pages %}disabled{% endif %}" id="last-page">»</a>
+        </div>
+    </div>
+
+    <!-- Include Flatpickr CSS and JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        .table th, .table td {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .table th {
+            white-space: nowrap;
+            min-width: 100px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 10;
+        }
+        .table-responsive {
+            max-height: 500px;
+            overflow-x: auto;
+            overflow-y: auto;
+            position: relative;
+        }
+        .column-hidden {
+            display: none !important;
+        }
+        .row-hidden {
+            display: none;
+        }
+        .search-row {
+            background: #fff;
+            position: sticky;
+            top: 38px;
+            z-index: 9;
+        }
+        .search-row td {
+            padding: 0.25rem !important;
+        }
+        .column-search {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .dropdown-menu {
+            z-index: 1000;
+            min-width: 8rem;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            background-color: #fff;
+            padding: 0.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 0.375rem;
+        }
+        .dropdown-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            border-radius: 0.25rem;
+            padding: 0.375rem 0.5rem 0.375rem 2rem;
+            font-size: 0.875rem;
+            cursor: default;
+            user-select: none;
+            transition: all 0.2s;
+        }
+        .dropdown-item:hover, .dropdown-item:focus {
+            background-color: #f3f4f6;
+        }
+        .dropdown-item.checked::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            width: 1rem;
+            height: 1rem;
+            background: url("data:image/svg+xml,%3Csvg width='15' height='15' viewBox='0 0 15 15' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.4669 3.72684C11.7558 3.91574 11.8369 4.30308 11.648 4.59198L7.39799 11.092C7.29783 11.2452 7.13556 11.3467 6.95402 11.3699C6.77247 11.3931 6.58989 11.3355 6.45446 11.2124L3.70446 8.71241C3.44905 8.48022 3.43023 8.08494 3.66242 7.82953C3.89461 7.57412 4.28989 7.55529 4.5453 7.78749L6.75292 9.79441L10.6018 3.90792C10.7907 3.61902 11.178 3.53795 11.4669 3.72684Z' fill='currentColor' fill-rule='evenodd' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat center;
+        }
+        #columnTogglePopup {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarButton = document.getElementById('calendarButton');
+            const dateRangeInput = document.getElementById('date_range');
+            const fromDateInput = document.getElementById('from_date');
+            const toDateInput = document.getElementById('to_date');
+            const downloadLink = document.getElementById('downloadLink');
+            const searchForm = document.getElementById('searchForm');
+            const searchInput = document.getElementById('search_query');
+            const table = document.getElementById('dataTable');
+            const rowsPerPageSelect = document.getElementById('rows_per_page_select');
+            const columnSearchInputs = document.querySelectorAll('.column-search');
+            const columnToggleButton = document.getElementById('columnToggleButton');
+            const columnTogglePopup = document.getElementById('columnTogglePopup');
+
+            // Toggle popup visibility for column toggle
+            columnToggleButton.addEventListener('click', function () {
+                columnTogglePopup.style.display = columnTogglePopup.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Close column toggle popup when clicking outside
+            document.addEventListener('click', function (event) {
+                if (!columnToggleButton.contains(event.target) && !columnTogglePopup.contains(event.target)) {
+                    columnTogglePopup.style.display = 'none';
+                }
+            });
+
+            const columnToggles = document.querySelectorAll('.column-toggle');
+            columnToggles.forEach(toggle => {
+                toggle.addEventListener('change', function () {
+                    const columnIndex = this.getAttribute('data-column');
+                    const cells = document.querySelectorAll(`[data-column="${columnIndex}"]`);
+                    const searchCell = document.querySelector(`.search-row td[data-column="${columnIndex}"]`);
+                    cells.forEach(cell => {
+                        if (this.checked) {
+                            cell.classList.remove('column-hidden');
+                        } else {
+                            cell.classList.add('column-hidden');
+                        }
+                    });
+                    if (searchCell) {
+                        if (this.checked) {
+                            searchCell.classList.remove('column-hidden');
+                        } else {
+                            searchCell.classList.add('column-hidden');
+                        }
+                    }
+                });
+            });
+
+            // Initialize dropdown filters for specified columns
+            const dropdownButtons = document.querySelectorAll('.dropdown-toggle');
+            const dropdownMenus = document.querySelectorAll('.dropdown-menu');
+
+            dropdownButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const columnIndex = this.getAttribute('data-column');
+                    const dropdownMenu = document.querySelector(`.dropdown-menu[data-column="${columnIndex}"]`);
+                    // Close other open dropdowns
+                    dropdownMenus.forEach(menu => {
+                        if (menu !== dropdownMenu) {
+                            menu.style.display = 'none';
+                        }
+                    });
+                    // Toggle current dropdown
+                    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+                });
+            });
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function (event) {
+                if (!event.target.closest('.dropdown')) {
+                    dropdownMenus.forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                }
+            });
+
+            // Populate dropdowns with unique values
+            const uniqueValues = {
+                {% for i in range(columns|length) %}
+                    {% set column = columns[i] %}
+                    {% set column_lower = column|lower %}
+                    {% if column_lower in ['algo', 'server', 'enabled', 'status', 'order_type', 'product', 'validity', 'logged_in', 'sqoff_done','strategy_tag', 'broker', 'operator', 'log_type','transaction','exchange'] %}
+                        {{ i }}: [{% for row in data %}'{{ row[column]|string }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                    {% endif %}
+                {% endfor %}
+            };
+
+            // Remove duplicates and sort
+            Object.keys(uniqueValues).forEach(columnIndex => {
+                uniqueValues[columnIndex] = [...new Set(uniqueValues[columnIndex].filter(val => val !== ''))].sort();
+                const dropdownMenu = document.querySelector(`.dropdown-menu[data-column="${columnIndex}"] .max-h-\\\[200px\\\]`);
+                uniqueValues[columnIndex].forEach(value => {
+                    const item = document.createElement('div');
+                    item.classList.add('dropdown-item');
+                    item.setAttribute('data-value', value);
+                    item.textContent = value;
+                    item.addEventListener('click', function () {
+                        const isChecked = this.classList.contains('checked');
+                        if (isChecked) {
+                            this.classList.remove('checked');
+                        } else {
+                            this.classList.add('checked');
+                        }
+                        applyFilters(columnIndex);
+                    });
+                    dropdownMenu.appendChild(item);
+                });
+            });
+
+            // Clear filters
+            const clearFilterButtons = document.querySelectorAll('.clear-filter');
+            clearFilterButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const columnIndex = this.getAttribute('data-column');
+                    const items = document.querySelectorAll(`.dropdown-menu[data-column="${columnIndex}"] .dropdown-item:not(.clear-filter)`);
+                    items.forEach(item => item.classList.remove('checked'));
+                    applyFilters(columnIndex);
+                });
+            });
+
+            // Apply filters for dropdowns
+            function applyFilters(columnIndex) {
+                const filters = {};
+                dropdownMenus.forEach(menu => {
+                    const colIndex = menu.getAttribute('data-column');
+                    const checkedItems = menu.querySelectorAll('.dropdown-item.checked:not(.clear-filter)');
+                    const selectedValues = Array.from(checkedItems).map(item => item.getAttribute('data-value'));
+                    if (selectedValues.length > 0) {
+                        filters[colIndex] = selectedValues;
+                    }
+                });
+
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    let showRow = true;
+                    Object.keys(filters).forEach(colIndex => {
+                        const cell = row.querySelector(`td[data-column="${colIndex}"]`);
+                        const cellValue = cell.textContent.trim();
+                        if (!filters[colIndex].includes(cellValue)) {
+                            showRow = false;
+                        }
+                    });
+                    if (showRow) {
+                        row.classList.remove('row-hidden');
+                    } else {
+                        row.classList.add('row-hidden');
+                    }
+                });
+
+                // Update pagination (simplified for client-side filtering)
+                const visibleRows = table.querySelectorAll('tbody tr:not Row-hidden)').length;
+                const rowsPerPage = parseInt(rowsPerPageSelect.value);
+                const totalPages = Math.ceil(visibleRows / rowsPerPage);
+                document.getElementById('page-info').textContent = `Page ${Math.min(page, totalPages)} of ${totalPages}`;
+            }
+
+            flatpickr(dateRangeInput, {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                defaultDate: (fromDateInput.value && toDateInput.value) ? [fromDateInput.value, toDateInput.value] : [],
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length === 2) {
+                        const fromDate = instance.formatDate(selectedDates[0], "Y-m-d");
+                        const toDate = instance.formatDate(selectedDates[1], "Y-m-d");
+                        fromDateInput.value = fromDate;
+                        toDateInput.value = toDate;
+                        document.getElementById('pagination_from_date').value = fromDate;
+                        document.getElementById('pagination_to_date').value = toDate;
+
+                        if (downloadLink) {
+                            const downloadUrl = new URL(downloadLink.href);
+                            downloadUrl.searchParams.set('from_date', fromDate);
+                            downloadUrl.searchParams.set('to_date', toDate);
+                            downloadLink.href = downloadUrl.toString();
+                        }
+
+                        fetchTableData(1);
+                    } else if (selectedDates.length === 0) {
+                        fromDateInput.value = "";
+                        toDateInput.value = "";
+                        document.getElementById('pagination_from_date').value = "";
+                        document.getElementById('pagination_to_date').value = "";
+
+                        if (downloadLink) {
+                            const downloadUrl = new URL(downloadLink.href);
+                            downloadUrl.searchParams.delete('from_date');
+                            downloadUrl.searchParams.delete('to_date');
+                            downloadLink.href = downloadUrl.toString();
+                        }
+
+                        fetchTableData(1);
+                    }
+                },
+                onClose: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length < 2 && selectedDates.length > 0) {
+                        instance.setDate([]);
+                        fromDateInput.value = "";
+                        toDateInput.value = "";
+                        document.getElementById('pagination_from_date').value = "";
+                        document.getElementById('pagination_to_date').value = "";
+
+                        if (downloadLink) {
+                            const downloadUrl = new URL(downloadLink.href);
+                            downloadUrl.searchParams.delete('from_date');
+                            downloadUrl.searchParams.delete('to_date');
+                            downloadLink.href = downloadUrl.toString();
+                        }
+
+                        fetchTableData(1);
+                    }
+                }
+            });
+
+            calendarButton.addEventListener('click', function() {
+                dateRangeInput._flatpickr.open();
+            });
+
+            if (!localStorage.getItem('sidebarState')) {
+                localStorage.setItem('sidebarState', 'closed');
+            }
+
+            if (localStorage.getItem('sidebarState') === 'closed') {
+                document.body.classList.remove('sidebar-open');
+                document.body.classList.add('toggled');
+            }
+
+            document.addEventListener('sidebar-toggle', function () {
+                if (document.body.classList.contains('sidebar-open')) {
+                    localStorage.setItem('sidebarState', 'open');
+                } else {
+                    localStorage.setItem('sidebarState', 'closed');
+                }
+            });
+
+            let searchTimeout;
+            searchInput.addEventListener('input', function () {
+                const searchTerm = this.value.trim();
+                document.getElementById('pagination_search_query').value = searchTerm;
+
+                if (downloadLink) {
+                    const downloadUrl = new URL(downloadLink.href);
+                    downloadUrl.searchParams.set('search_query', searchTerm);
+                    downloadLink.href = downloadUrl.toString();
+                }
+
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    fetchTableData(1);
+                }, 500);
+            });
+
+            let columnSearchTimeout;
+            columnSearchInputs.forEach(input => {
+                input.addEventListener('input', function () {
+                    const columnIndex = this.getAttribute('data-column');
+                    const searchTerm = this.value.trim();
+                    const hiddenInput = document.getElementById(`pagination_column_${columnIndex}`);
+                    if (hiddenInput) {
+                        hiddenInput.value = searchTerm;
+                    }
+
+                    if (downloadLink) {
+                        const downloadUrl = new URL(downloadLink.href);
+                        if (searchTerm) {
+                            downloadUrl.searchParams.set(`column_${columnIndex}`, searchTerm);
+                        } else {
+                            downloadUrl.searchParams.delete(`column_${columnIndex}`);
+                        }
+                        downloadLink.href = downloadUrl.toString();
+                    }
+
+                    clearTimeout(columnSearchTimeout);
+                    columnSearchTimeout = setTimeout(() => {
+                        fetchTableData(1);
+                    }, 500);
+                });
+            });
+
+            rowsPerPageSelect.addEventListener('change', function () {
+                document.getElementById('rows_per_page').value = this.value;
+                fetchTableData(1);
+            });
+
+            window.fetchTableData = function(page) {
+                const searchQuery = searchInput.value;
+                const fromDate = fromDateInput.value;
+                const toDate = toDateInput.value;
+                const rowsPerPage = document.getElementById('rows_per_page').value;
+                const columnSearchTerms = {};
+                columnSearchInputs.forEach(input => {
+                    const columnIndex = input.getAttribute('data-column');
+                    const searchTerm = input.value.trim();
+                    if (searchTerm) {
+                        columnSearchTerms[`column_${columnIndex}`] = searchTerm;
+                    }
+                });
+
+                const url = new URL("{{ url_for('view_table', table=table) }}", window.location.origin);
+                url.searchParams.set('search_query', searchQuery);
+                url.searchParams.set('from_date', fromDate);
+                url.searchParams.set('to_date', toDate);
+                url.searchParams.set('page', page);
+                url.searchParams.set('rows_per_page', rowsPerPage);
+                Object.keys(columnSearchTerms).forEach(key => {
+                    url.searchParams.set(key, columnSearchTerms[key]);
+                });
+
+                if (downloadLink) {
+                    const downloadUrl = new URL("{{ url_for('download_table', table=table, download_all='true') }}", window.location.origin);
+                    downloadUrl.searchParams.set('search_query', searchQuery);
+                    if (fromDate) downloadUrl.searchParams.set('from_date', fromDate);
+                    else downloadUrl.searchParams.delete('from_date');
+                    if (toDate) downloadUrl.searchParams.set('to_date', toDate);
+                    else downloadUrl.searchParams.delete('to_date');
+                    Object.keys(columnSearchTerms).forEach(key => {
+                        downloadUrl.searchParams.set(key, columnSearchTerms[key]);
+                    });
+                    const activeColumnKeys = Object.keys(columnSearchTerms);
+                    downloadUrl.searchParams.forEach((value, key) => {
+                        if (key.startsWith('column_') && !activeColumnKeys.includes(key)) {
+                            downloadUrl.searchParams.delete(key);
+                        }
+                    });
+                    downloadLink.href = downloadUrl.toString();
+                }
+
+                const updatePaginationLinks = (totalPages) => {
+                    const firstPageBtn = document.getElementById('first-page');
+                    const prevPageBtn = document.getElementById('prev-page');
+                    const nextPageBtn = document.getElementById('next-page');
+                    const lastPageBtn = document.getElementById('last-page');
+
+                    firstPageBtn.classList.toggle('disabled', page <= 1);
+                    prevPageBtn.classList.toggle('disabled', page <= 1);
+                    nextPageBtn.classList.toggle('disabled', page >= totalPages);
+                    lastPageBtn.classList.toggle('disabled', page >= totalPages);
+
+                    firstPageBtn.onclick = () => fetchTableData(1);
+                    prevPageBtn.onclick = () => fetchTableData(page - 1);
+                    nextPageBtn.onclick = () => fetchTableData(page + 1);
+                    lastPageBtn.onclick = () => fetchTableData(totalPages);
+                };
+
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = table.querySelector('tbody');
+                    tbody.innerHTML = '';
+                    data.data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td data-column="0">${row['row_id'] || ''}</td>
+                            ${data.columns.slice(1).map((column, index) => `
+                                <td data-column="${index + 1}">${row[column] || ''}</td>
+                            `).join('')}
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    document.getElementById('page-info').textContent = `Page ${data.page} of ${data.total_pages}`;
+                    document.getElementById('pagination_search_query').value = data.search_query;
+                    document.getElementById('pagination_from_date').value = data.from_date;
+                    document.getElementById('pagination_to_date').value = data.to_date;
+
+                    // Update column search hidden inputs
+                    columnSearchInputs.forEach(input => {
+                        const columnIndex = input.getAttribute('data-column');
+                        const hiddenInput = document.getElementById(`pagination_column_${columnIndex}`);
+                        if (hiddenInput) {
+                            hiddenInput.value = input.value.trim();
+                        }
+                    });
+
+                    updatePaginationLinks(data.total_pages);
+
+                    columnToggles.forEach(toggle => {
+                        const columnIndex = toggle.getAttribute('data-column');
+                        const cells = document.querySelectorAll(`[data-column="${columnIndex}"]`);
+                        const searchCell = document.querySelector(`.search-row td[data-column="${columnIndex}"]`);
+                        if (!toggle.checked) {
+                            cells.forEach(cell => cell.classList.add('column-hidden'));
+                            if (searchCell) searchCell.classList.add('column-hidden');
+                        }
+                    });
+
+                    // Re-populate dropdowns after fetch
+                    Object.keys(uniqueValues).forEach(columnIndex => {
+                        const dropdownMenu = document.querySelector(`.dropdown-menu[data-column="${columnIndex}"] .max-h-\\\[200px\\\]`);
+                        dropdownMenu.innerHTML = `
+                            <div class="dropdown-item clear-filter" data-column="${columnIndex}">Clear all</div>
+                            <div role="separator" class="-mx-1 my-1 h-px bg-muted"></div>
+                        `;
+                        uniqueValues[columnIndex] = [...new Set(data.data.map(row => row[data.columns[columnIndex] || 'row_id']?.toString()).filter(val => val !== undefined && val !== ''))].sort();
+                        uniqueValues[columnIndex].forEach(value => {
+                            const item = document.createElement('div');
+                            item.classList.add('dropdown-item');
+                            item.setAttribute('data-value', value);
+                            item.textContent = value;
+                            item.addEventListener('click', function () {
+                                const isChecked = this.classList.contains('checked');
+                                if (isChecked) {
+                                    this.classList.remove('checked');
+                                } else {
+                                    this.classList.add('checked');
+                                }
+                                applyFilters(columnIndex);
+                            });
+                            dropdownMenu.appendChild(item);
+                        });
+                    });
+
+                    // Re-apply filters after fetch
+                    Object.keys(uniqueValues).forEach(columnIndex => {
+                        applyFilters(columnIndex);
+                    });
+                })
+                .catch(error => console.error('Error fetching table data:', error));
+            };
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}Aggregate{% endblock %}
+
+{% block content %}
+<style>
+    /* Table Styling */
+    .table-responsive {
+        max-height: 400px; /* Maintain vertical scrollbar */
+        overflow-x: auto; /* Enable horizontal scrollbar */
+        margin-top: 20px;
+    }
+    .table-smaller {
+        font-size: 0.85rem; /* Slightly larger for readability */
+        width: 100%;
+        table-layout: auto; /* Allow table to adjust column widths */
+    }
+    .table-smaller th,
+    .table-smaller td {
+        padding: 0.4rem; /* Slightly increased padding for touch targets */
+        white-space: nowrap; /* Prevent text wrapping in cells */
+    }
+
+    /* Card Styling */
+    .compact-card .card-body {
+        padding: 0.75rem; /* Adjusted padding for balance */
+    }
+    .compact-card h5 {
+        font-size: 1rem; /* Consistent title size */
+        margin-bottom: 0.5rem;
+    }
+    .compact-card p {
+        font-size: 0.85rem; /* Readable text size */
+    }
+    .compact-card .alert {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .compact-card .btn {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        width: auto; /* Allow buttons to size naturally */
+    }
+
+    /* Button Styling */
+    .btn-grd-primary, .btn-grd-secondary, .btn-grd-success, .btn-grd-warning {
+        width: 100%; /* Full width on mobile */
+        margin-bottom: 0.5rem; /* Space between stacked buttons */
+    }
+
+    /* Dropdown Styling */
+    .user-id-dropdown {
+        max-height: 200px;
+        overflow-y: auto; /* Scrollable dropdown on mobile */
+        width: 100%; /* Full width */
+    }
+
+    /* Modal Styling */
+    .modal-dialog {
+        max-width: 90%; /* Limit modal width on mobile */
+        margin: 1rem auto; /* Center with reduced margin */
+    }
+    .modal-body {
+        padding: 1rem;
+    }
+
+    /* Form Styling */
+    .form-control, .form-select {
+        font-size: 0.85rem; /* Readable input size */
+        padding: 0.4rem;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 576px) {
+        .container {
+            padding: 0.5rem; /* Reduced padding for mobile */
+        }
+
+        h3.text-center {
+            font-size: 1.25rem; /* Smaller heading */
+        }
+
+        .table-smaller th,
+        .table-smaller td {
+            font-size: 0.75rem; /* Smaller text on mobile */
+            padding: 0.3rem;
+        }
+
+        .compact-card .card-body {
+            padding: 0.5rem;
+        }
+
+        .compact-card h5 {
+            font-size: 0.9rem;
+        }
+
+        .compact-card p, .compact-card .alert {
+            font-size: 0.75rem;
+        }
+
+        .compact-card .btn {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+        }
+
+        .btn-grd-primary, .btn-grd-secondary, .btn-grd-success, .btn-grd-warning {
+            width: 100%; /* Ensure full width */
+        }
+
+        .dropdown-menu {
+            width: 100%; /* Full width dropdown */
+        }
+
+        .modal-dialog {
+            max-width: 95%; /* Nearly full width on small screens */
+        }
+
+        .form-check-label {
+            font-size: 0.75rem; /* Smaller labels in dropdown */
+        }
+    }
+
+    @media (min-width: 577px) {
+        .btn-grd-primary, .btn-grd-secondary, .btn-grd-success, .btn-grd-warning {
+            width: auto; /* Buttons inline on larger screens */
+            margin-right: 0.5rem; /* Space between buttons */
+            margin-bottom: 0;
+        }
+    }
+</style>
+
+<!-- Aggregate Section -->
+<div id="admin-aggregate" class="section active">
+    <div class="container">
+        <h3 class="text-center mb-4">MTM for All Users</h3>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages mb-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Card for Total MTM -->
+        <div class="card mb-4 compact-card">
+            <div class="card-body">
+                <h5 class="card-title">Total MTM for All Users</h5>
+                <p class="card-text">Calculate the total MTM across all users for a selected date.</p>
+                <button type="button" class="btn btn-grd-primary" data-bs-toggle="modal" data-bs-target="#totalMtmModal">
+                    Calculate Total MTM
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal for Total MTM Date Selection -->
+        <div class="modal fade" id="totalMtmModal" tabindex="-1" aria-labelledby="totalMtmModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="totalMtmModalLabel">Select Date for Total MTM</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="totalMtmForm" action="{{ url_for('admin.admin_total_mtm') }}" method="POST">
+                            <div class="mb-3">
+                                <label for="selected_date_mtm" class="form-label">Select Date</label>
+                            <input type="date" class="form-control" id="selected_date_mtm" name="selected_date" required>
+                            </div>
+                            <button type="submit" class="btn btn-grd-primary">Apply</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card for Excluding User IDs -->
+        <div class="card mb-4 compact-card">
+            <div class="card-body">
+                <h5 class="card-title">Select Users to Include</h5>
+                <p class="card-text">Choose which user IDs to include in the Total MTM calculations. Unchecked users will be excluded.</p>
+                <form action="{{ url_for('admin.include_users') }}" method="POST">
+                    <input type="hidden" name="selected_date" value="{{ selected_date }}">
+                    <div class="dropdown">
+                        <button class="btn btn-grd-secondary dropdown-toggle" type="button" id="userIdDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Select User IDs
+                        </button>
+                        <ul class="dropdown-menu user-id-dropdown" aria-labelledby="userIdDropdown">
+                            <li class="select-all-container">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllUsers" checked onclick="toggleAllUsers(this)">
+                                    <label class="form-check-label" for="selectAllUsers">Select All</label>
+                                </div>
+                            </li>
+                            {% for user_id in all_user_ids %}
+                                <li>
+                                    <div class="dropdown-item">
+                                        <div class="form-check">
+                                            <input class="form-check-input user-checkbox" type="checkbox" name="included_users" value="{{ user_id }}" id="user_{{ user_id }}" {% if user_id not in excluded_users %}checked{% endif %}>
+                                            <label class="form-check-label" for="user_{{ user_id }}">{{ user_id }}</label>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <button type="submit" class="btn btn-grd-primary mt-3">Apply User Selections</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display Total MTM Card -->
+        {% if total_mtm is not none %}
+        <div class="card mb-4 compact-card">
+            <div class="card-body">
+                <h5 class="card-title">Total MTM (All) on {{ selected_date }}</h5>
+                <p class="card-text">
+                    Total MTM (All): <strong>{{ total_mtm }}</strong><br>
+                    No. of Users: <strong>{{ num_users }}</strong><br>
+                    Servers: <strong>{{ servers|join(', ') }}</strong>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Pivot Table -->
+        <div class="card mb-4">
+            <div class="card-body">
+                {% if excluded_users %}
+                    <div class="alert alert-info mb-3">
+                        Excluded Users: <strong>{{ excluded_users|join(', ') }}</strong>
+                        <form action="{{ url_for('admin.reset_exclusions') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="selected_date" value="{{ selected_date }}">
+                            <button type="submit" class="btn btn-sm btn-grd-warning ms-2">Reset Exclusions</button>
+                        </form>
+                    </div>
+                {% endif %}
+
+                {% if data %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-smaller">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ALGO</th>
+                                    <th>SERVER</th>
+                                    <th>No. of Users</th>
+                                    <th>Sum of ALLOCATION</th>
+                                    <th>Sum of MTM (All)</th>
+                                    <th>Return Ratio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data %}
+                                    <tr>
+                                        <td>{{ row['ALGO'] }}</td>
+                                        <td>{{ row['SERVER'] }}</td>
+                                        <td>{{ row['No. of Users'] }}</td>
+                                        <td>{{ row['Sum of ALLOCATION'] }}</td>
+                                        <td>{{ row['Sum of MTM (All)'] }}</td>
+                                        <td>{{ row['Return Ratio'] }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{{ url_for('admin.admin_aggregate_page', selected_date=selected_date, export='csv') }}" class="btn btn-grd-success">Export to CSV</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Realised Profit Section -->
+        <div id="realised-profit" class="section">
+            <div class="container">
+                <h1 class="text-center mb-4">Realised Profit</h1>
+
+                <!-- File Upload and User ID Selection -->
+                <div class="card mb-4 compact-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Orderbook Data and Select User</h5>
+                        <p class="card-text">Upload an Excel file containing orderbook data and select a User ID to calculate realised profit.</p>
+                        <form id="realisedProfitForm" action="{{ url_for('admin.realised_profit') }}" method="POST" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="file_upload" class="form-label">Upload Excel File</label>
+                                <input type="file" class="form-control" id="file_upload" name="file_upload" accept=".xlsx,.xls" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="user_id" class="form-label">Select User ID</label>
+                                <select class="form-select" id="user_id" name="user_id" disabled>
+                                    <option value="" selected>No file uploaded</option>
+                                    {% if user_ids %}
+                                        {% for user_id in user_ids %}
+                                            <option value="{{ user_id }}" {% if user_id == selected_user_id %}selected{% endif %}>{{ user_id }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-grd-primary" id="calculateProfitBtn" disabled>Calculate Profit</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Display Profit Analysis -->
+                {% if profit_data %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Realised Profit for User {{ selected_user_id }}</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-bordered table-smaller">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Trading Symbol</th>
+                                        <th>Buy Quantity</th>
+                                        <th>Sell Quantity</th>
+                                        <th>Which Side</th>
+                                        <th>Total Sell Value</th>
+                                        <th>Total Buy Value</th>
+                                        <th>Realised Profit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in profit_data %}
+                                        <tr>
+                                            <td>{{ row['TradingSymbol'] }}</td>
+                                            <td>{{ row['BuyQuantity'] }}</td>
+                                            <td>{{ row['SellQuantity'] }}</td>
+                                            <td>{{ row['which_side'] }}</td>
+                                            <td>{{ row['total_sell_value']|round(2) }}</td>
+                                            <td>{{ row['total_buy_value']|round(2) }}</td>
+                                            <td>{{ row['RealizedProfit']|round(2) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <a href="{{ url_for('admin.realised_profit', export='csv') }}" class="btn btn-grd-success">Export to CSV</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleAllUsers(checkbox) {
+        const userCheckboxes = document.querySelectorAll('.user-checkbox');
+        userCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+    }
+
+    // Sidebar section toggle
+    document.querySelectorAll('.nav-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const sectionId = button.getAttribute('data-section');
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        });
+    });
+
+    // Enable/disable User ID dropdown and Calculate button based on file upload
+    document.getElementById('file_upload').addEventListener('change', function() {
+        const userIdSelect = document.getElementById('user_id');
+        const calculateBtn = document.getElementById('calculateProfitBtn');
+        if (this.files.length > 0) {
+            userIdSelect.disabled = false;
+            calculateBtn.disabled = false;
+        } else {
+            userIdSelect.disabled = true;
+            calculateBtn.disabled = true;
+        }
+    });
+</script>
+{% endblock %}

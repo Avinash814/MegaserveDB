@@ -1,0 +1,748 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Data {{ table_name }}{% endblock %}
+
+{% block content %}
+<!-- Include DataTables and Flatpickr CSS -->
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Custom Styles for rename.html -->
+<style>
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --primary: 222.2 47.4% 11.2%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 222.2 84% 4.9%;
+        --radius: 0.5rem;
+        --chart-1: 12 76% 61%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 85vh;
+        background-color: hsl(var(--card));
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--border));
+        margin-bottom: 1rem;
+    }
+
+    #data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #data-table th, #data-table td {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        vertical-align: middle;
+        line-height: 1.2;
+        border: 1px solid hsl(var(--border));
+        text-align: center;
+    }
+
+    #data-table th {
+        background-color: hsl(var(--secondary));
+        color: hsl(var(--secondary-foreground));
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    #data-table td {
+        color: hsl(var(--card-foreground));
+    }
+
+    #data-table input[type="checkbox"] {
+        visibility: visible;
+        width: 16px;
+        height: 16px;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .dt-checkboxes {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background-color: hsl(var(--card));
+        border-radius: var(--radius);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .filter-form > div {
+        flex-grow: 1;
+        min-width: 200px;
+    }
+
+    #main-search-input {
+        height: 2.25rem;
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--input));
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        width: 100%;
+    }
+
+    #main-search-input:focus-visible {
+        outline: 1px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+
+    .flatpickr-input {
+        width: 100%;
+        font-size: 0.875rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--input));
+    }
+
+    .rename-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .rename-column-section, .rename-data-section {
+        background-color: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        border-radius: var(--radius);
+        padding: 1rem;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        color: hsl(var(--foreground));
+        margin-bottom: 1rem;
+    }
+
+    .flash-messages {
+        margin-bottom: 1.5rem;
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--border));
+    }
+
+    .alert-success {
+        background-color: hsl(var(--chart-4) / 0.2);
+        color: hsl(var(--chart-4));
+    }
+
+    .alert-danger {
+        background-color: hsl(var(--destructive) / 0.2);
+        color: hsl(var(--destructive));
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 0.9rem;
+        cursor: pointer;
+        color: hsl(var(--muted-foreground));
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+    }
+
+    .bottom-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    #rows-per-page {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+        border: 1px solid hsl(var(--input));
+        border-radius: var(--radius);
+        cursor: pointer;
+    }
+
+    #select_all_rows {
+        width: 16px;
+        height: 16px;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: hsl(var(--card));
+        border: 2px solid hsl(var(--primary));
+        border-radius: 4px;
+        transition: background-color 0.2s, border-color 0.2s;
+        cursor: pointer;
+    }
+
+    #select_all_rows:checked {
+        background-color: hsl(var(--primary));
+        border-color: hsl(var(--primary));
+    }
+
+    #select_all_rows:checked::before {
+        content: "✔";
+        color: hsl(var(--primary-foreground));
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    #select_all_rows:focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+
+    #select_all_rows:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .custom-alert {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 1rem;
+        border-radius: var(--radius);
+        background-color: hsl(var(--destructive) / 0.9);
+        color: hsl(var(--destructive-foreground));
+        z-index: 10000;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-destructive {
+        background-color: hsl(var(--destructive));
+        color: hsl(var(--destructive-foreground));
+        border: 1px solid hsl(var(--destructive) / 0.8);
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .btn-destructive:hover {
+        background-color: hsl(var(--destructive) / 0.9);
+        border-color: hsl(var(--destructive) / 0.7);
+    }
+
+    .btn-destructive:focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+</style>
+
+<div class="container-fluid">
+    <h1 class="text-center mb-4">Update Data: {{ table_name }}</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="GET" id="filterForm" action="{{ url_for('rename_data', table=table_name) }}" class="filter-form mb-3">
+        <div class="main-search">
+            <label for="main-search-input" class="form-label visually-hidden">Search</label>
+            <input type="text" id="main-search-input" class="form-control" name="search_query" value="{{ search_query or '' }}" placeholder="Search...">
+        </div>
+        <!-- <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-white shadow-sm hover:bg-gray-100 hover:text-gray-800 h-8 w-8 rounded-md text-xs border-0" aria-label="Toggle columns" type="button" data-bs-toggle="modal" data-bs-target="#columnToggleModal">
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-4">
+                        <path d="M5.5 3C4.67157 3 4 3.67157 4 4.5C4 5.32843 4.67157 6 5.5 6C6.32843 6 7 5.32843 7 4.5C7 3.67157 6.32843 3 5.5 3ZM3 5C3.01671 5 3.03323 4.99918 3.04952 4.99758C3.28022 6.1399 4.28967 7 5.5 7C6.71033 7 7.71978 6.1399 7.95048 4.99758C7.96677 4.99918 7.98329 5 8 5H13.5C13.7761 5 14 4.77614 14 4.5C14 4.22386 13.7761 4 13.5 4H8C7.98329 4 7.96677 4.00082 7.95048 4.00242C7.71978 2.86009 6.71033 2 5.5 2C4.28967 2 3.28022 2.86009 3.04952 4.00242C3.03323 4.00082 3.01671 4 3 4H1.5C1.22386 4 1 4.22386 1 4.5C1 4.77614 1.22386 5 1.5 5H3ZM11.9505 10.9976C11.7198 12.1399 10.7103 13 9.5 13C8.28967 13 7.28022 12.1399 7.04952 10.9976C7.03323 10.9992 7.01671 11 7 11H1.5C1.22386 11 1 10.7761 1 10.5C1 10.2239 1.22386 10 1.5 10H7C7.01671 10 7.03323 10.0008 7.04952 10.0024C7.28022 8.8601 8.28967 8 9.5 8C10.7103 8 11.7198 8.8601 11.9505 10.0024C11.9668 10.0008 11.9833 10 12 10H13.5C13.7761 10 14 10.2239 14 10.5C14 10.7761 13.7761 11 13.5 11H12C11.9833 11 11.9668 10.9992 11.9505 10.9976ZM8 10.5C8 9.67157 8.67157 9 9.5 9C10.3284 9 11 9.67157 11 10.5C11 11.3284 10.3284 12 9.5 12C8.67157 12 8 11.3284 8 10.5Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
+                    </svg>
+                </button> -->
+        <div style="min-width: 220px;">
+            <label for="date_range" class="form-label visually-hidden">Date Range</label>
+            <input type="text" id="date_range" class="form-control flatpickr-input" placeholder="Select date range...">
+            <input type="hidden" name="from_date" id="from_date" value="{{ from_date or '' }}">
+            <input type="hidden" name="to_date" id="to_date" value="{{ to_date or '' }}">
+        </div>
+    </form>
+
+    <div class="table-container">
+        <form method="POST" action="{{ url_for('rename_data', table=table_name) }}" id="deleteForm">
+            <input type="hidden" id="total-rows" value="{{ total_rows }}">
+            <div class="mb-3 d-flex justify-content-end">
+                <button type="submit" name="delete_rows" class="btn btn-destructive me-2">Delete Selected Rows</button>
+                <!-- <button type="submit" name="delete_columns" class="btn btn-destructive me-2">Delete Selected Columns</button> -->
+            </div>
+            <table id="data-table" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="select_all_rows" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="Select all rows">
+                        </th>
+                        {% for column in columns %}
+                            <th>
+                                {% if column != 'row_id' and column != 'id' %}
+                                    <input type="checkbox" name="columns_to_delete" value="{{ column }}">
+                                {% endif %}
+                                {{ column }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="rows_to_delete" value="{{ row['id'] if table_name.lower() == 'upload_log' else row['row_id'] if 'row_id' in row else '' }}">
+                            </td>
+                            {% for column in columns %}
+                                <td>{{ row[column] if column in row else '' }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="{{ columns|length + 1 }}" class="text-center">No data available for the selected filters.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+    </div>
+
+    <div class="bottom-controls">
+        <div class="action-buttons">
+            <!-- <button class="btn btn-primary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#renameColumnCard" aria-expanded="false" aria-controls="renameColumnCard">
+                Rename Column
+            </button> -->
+            <button class="btn btn-primary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#updateDataCard" aria-expanded="false" aria-controls="updateDataCard">
+                Update Data in Column
+            </button>
+        </div>
+        <div class="pagination-controls">
+            <form method="GET" action="{{ url_for('rename_data', table=table_name) }}" id="perPageForm" class="d-inline-block me-3">
+                <input type="hidden" name="search_query" value="{{ search_query or '' }}">
+                <input type="hidden" name="from_date" value="{{ from_date or '' }}">
+                <input type="hidden" name="to_date" value="{{ to_date or '' }}">
+                <label for="rows-per-page" class="visually-hidden">Rows per page:</label>
+                <select id="rows-per-page" class="form-select form-select-sm d-inline-block" name="per_page" style="width:auto;" onchange="this.form.submit()">
+                    <option value="500" {% if per_page == 500 %}selected{% endif %}>500</option>
+                    <option value="1000" {% if per_page == 1000 %}selected{% endif %}>1000</option>
+                    <option value="1500" {% if per_page == 1500 %}selected{% endif %}>1500</option>
+                    <option value="3000" {% if per_page == 3000 %}selected{% endif %}>3000</option>
+                </select>
+                <span class="ms-1">rows/page</span>
+            </form>
+            <span>Page {{ page }} of {{ total_pages }}</span>
+            <div class="ms-2">
+                <a href="{{ url_for('rename_data', table=table_name, page=1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="{% if page <= 1 %}disabled{% endif %} btn btn-outline-primary btn-sm"><<</a>
+                <a href="{{ url_for('rename_data', table=table_name, page=page-1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="{% if page <= 1 %}disabled{% endif %} btn btn-outline-primary btn-sm"><</a>
+                <a href="{{ url_for('rename_data', table=table_name, page=page+1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="{% if page >= total_pages %}disabled{% endif %} btn btn-outline-primary btn-sm">></a>
+                <a href="{{ url_for('rename_data', table=table_name, page=total_pages, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="{% if page >= total_pages %}disabled{% endif %} btn btn-outline-primary btn-sm">>></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="rename-container">
+        <div class="rename-column-section collapse" id="renameColumnCard">
+            <div class="card-header">
+                <h5 class="card-title">Rename Column</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('rename_data', table=table_name) }}">
+                    <div class="mb-3">
+                        <label for="old_column" class="form-label">Select Column to Rename</label>
+                        <select class="form-select" id="old_column" name="old_column" required>
+                            <option value="">-- Select a Column --</option>
+                            {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_column" class="form-label">New Column Name</label>
+                        <input type="text" class="form-control" id="new_column" name="new_column" placeholder="Enter new column name" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Rename Column</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="rename-data-section collapse" id="updateDataCard">
+            <div class="card-header">
+                <h5 class="card-title">Update Data in Column</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('rename_data', table=table_name) }}">
+                    <div class="mb-3">
+                        <label for="column" class="form-label">Select Column</label>
+                        <select class="form-select" id="column" name="column" required>
+                            <option value="">-- Select a Column --</option>
+                            {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="row_id" class="form-label">{{ 'id' if table_name.lower() == 'upload_log' else 'row_id' }}</label>
+                        <input type="text" class="form-control" id="row_id" name="row_id" placeholder="Enter {{ 'id' if table_name.lower() == 'upload_log' else 'row_id' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="old_data" class="form-label">Old Data Value</label>
+                        <input type="text" class="form-control" id="old_data" name="old_data" placeholder="Enter old data value" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_data" class="form-label">New Data Value</label>
+                        <input type="text" class="form-control" id="new_data" name="new_data" placeholder="Enter new data value" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Data</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<!-- Include DataTables and Flatpickr JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    // Auto-close sidebar on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        document.body.classList.add('toggled');
+    });
+
+    $(document).ready(function() {
+        try {
+            console.log("Initializing rename.html script...");
+
+            // --- Debug Raw JSON Strings ---
+            const rawColumnsJson = '{{ columns | tojson | safe }}';
+            const rawDataJson = '{{ data | tojson | safe }}';
+            console.log('Raw Columns JSON:', rawColumnsJson);
+            console.log('Raw Data JSON:', rawDataJson);
+
+            // --- Parse JSON with Robust Handling ---
+            let columns = [];
+            let data = [];
+            try {
+                columns = JSON.parse(rawColumnsJson) || [];
+                data = JSON.parse(rawDataJson) || [];
+                console.log('Parsed Columns:', columns);
+                console.log('Parsed Data:', data);
+            } catch (e) {
+                console.error('Error parsing server-side data:', e.message);
+                columns = [];
+                data = [];
+            }
+
+            // --- Variable Definitions ---
+            const tableName = "{{ table_name | default('unknown') | e }}";
+            const currentSearchQuery = "{{ search_query | default('') | e }}";
+            const currentFromDate = "{{ from_date | default('') | e }}";
+            const currentToDate = "{{ to_date | default('') | e }}";
+            const primaryKey = "{{ 'id' if table_name.lower() == 'upload_log' else 'row_id' }}";
+            console.log("Variables:", { tableName, currentSearchQuery, currentFromDate, currentToDate, primaryKey });
+
+            // --- Flatpickr Initialization ---
+            const fp = flatpickr("#date_range", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                defaultDate: (currentFromDate && currentToDate) ? [currentFromDate, currentToDate] : [],
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length === 2) {
+                        $("#from_date").val(instance.formatDate(selectedDates[0], "Y-m-d"));
+                        $("#to_date").val(instance.formatDate(selectedDates[1], "Y-m-d"));
+                        $("#filterForm").submit();
+                    } else if (selectedDates.length === 0) {
+                        $("#from_date").val("");
+                        $("#to_date").val("");
+                        $("#filterForm").submit();
+                    }
+                },
+                onClose: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length < 2 && selectedDates.length > 0) {
+                        instance.setDate([]);
+                        $("#from_date").val("");
+                        $("#to_date").val("");
+                        $("#filterForm").submit();
+                    }
+                }
+            });
+            console.log("Flatpickr initialized");
+
+            // --- Function to Show Custom Alert ---
+            function showCustomAlert(message) {
+                const alertDiv = $('<div class="custom-alert"></div>').text(message);
+                $('body').append(alertDiv);
+                setTimeout(() => {
+                    alertDiv.fadeOut(200, () => alertDiv.remove());
+                }, 30); // Display for 30ms
+            }
+
+            // --- DataTable Initialization ---
+            let dataTable = null;
+            if (columns.length > 0) {
+                try {
+                    dataTable = $('#data-table').DataTable({
+                        scrollX: true,
+                        scrollY: "75vh",
+                        scrollCollapse: true,
+                        paging: false,
+                        searching: false,
+                        info: false,
+                        ordering: false,
+                        dom: 'rt',
+                        destroy: true,
+                        data: data,
+                        columns: [
+                            {
+                                data: null,
+                                title: '<input type="checkbox" id="select_all_rows" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="Select all rows">',
+                                render: function(data, type, row) {
+                                    const rowId = row[primaryKey] || '';
+                                    return `<input type="checkbox" name="rows_to_delete" value="${rowId}" ${rowId ? '' : 'disabled'}>`;
+                                },
+                                className: 'dt-checkboxes',
+                                orderable: false,
+                                searchable: false
+                            },
+                            ...columns.map(col => ({
+                                data: col,
+                                title: col + (col !== primaryKey ? ` <input type="checkbox" name="columns_to_delete" value="${col}">` : ''),
+                                render: function(data, type, row) {
+                                    return data != null ? data : '';
+                                },
+                                orderable: false,
+                                searchable: false
+                            }))
+                        ],
+                        drawCallback: function() {
+                            // Reapply checkbox states after draw
+                            $('input[name="rows_to_delete"]').each(function() {
+                                if ($(this).data('was-checked')) {
+                                    $(this).prop('checked', true);
+                                }
+                            });
+                            // Update select all checkbox state
+                            const totalCheckboxes = $('input[name="rows_to_delete"]').not(':disabled').length;
+                            const checkedCheckboxes = $('input[name="rows_to_delete"]:checked').not(':disabled').length;
+                            const selectAllCheckbox = $('#select_all_rows');
+                            if (totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0) {
+                                selectAllCheckbox.prop('checked', true).attr('data-state', 'checked').attr('aria-checked', 'true');
+                            } else {
+                                selectAllCheckbox.prop('checked', false).attr('data-state', 'unchecked').attr('aria-checked', 'false');
+                            }
+                            console.log('Draw complete, reapplied', checkedCheckboxes, 'checkbox states, total checkboxes:', totalCheckboxes);
+                        },
+                        initComplete: function() {
+                            console.log('DataTable initialized with', dataTable.data().count(), 'rows');
+
+                            // Debug: Log checkbox counts
+                            const totalCheckboxes = $('input[name="rows_to_delete"]').length;
+                            const checkedCheckboxes = $('input[name="rows_to_delete"]:checked').length;
+                            console.log('Initial total checkboxes:', totalCheckboxes, 'Checked:', checkedCheckboxes);
+
+                            // Debug: Verify checkbox presence
+                            if ($('#select_all_rows').length) {
+                                console.log('Select All checkbox found in DOM');
+                            } else {
+                                console.error('Select All checkbox not found in DOM');
+                            }
+                        }
+                    });
+                } catch (dtError) {
+                    console.error('DataTable initialization failed:', dtError.message);
+                }
+            } else {
+                console.warn('No columns provided, skipping DataTable initialization');
+            }
+
+            // --- Select All Checkbox Handler ---
+            $(document).on('click keydown', '#select_all_rows', function(e) {
+                if (e.type === 'keydown' && e.key !== ' ' && e.key !== 'Enter') return;
+                if (e.type === 'keydown') e.preventDefault();
+
+                console.log('Select All event triggered, type:', e.type);
+
+                const isChecked = $(this).prop('checked');
+                console.log('Select All state, isChecked:', isChecked);
+
+                // Update all row checkboxes
+                const checkboxes = $('#data-table').find('input[name="rows_to_delete"]:not(:disabled)');
+                checkboxes.prop('checked', isChecked).data('was-checked', isChecked);
+
+                // Update select all checkbox attributes
+                $(this).attr({
+                    'aria-checked': isChecked ? 'true' : 'false',
+                    'data-state': isChecked ? 'checked' : 'unchecked'
+                });
+
+                // Log results
+                const checkedCount = checkboxes.filter(':checked').length;
+                console.log('Updated', checkboxes.length, 'checkboxes, checked:', checkedCount);
+
+                // Force DataTable redraw
+                if (dataTable) {
+                    dataTable.draw();
+                }
+            });
+
+            // --- Individual Checkbox Handler ---
+            $(document).on('change', 'input[name="rows_to_delete"]', function() {
+                $(this).data('was-checked', this.checked);
+                const totalCheckboxes = $('#data-table').find('input[name="rows_to_delete"]:not(:disabled)').length;
+                const checkedCheckboxes = $('#data-table').find('input[name="rows_to_delete"]:checked:not(:disabled)').length;
+                const selectAllCheckbox = $('#select_all_rows');
+
+                // Update Select All checkbox state
+                if (totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0) {
+                    selectAllCheckbox.prop('checked', true).attr({
+                        'aria-checked': 'true',
+                        'data-state': 'checked'
+                    });
+                } else {
+                    selectAllCheckbox.prop('checked', false).attr({
+                        'aria-checked': 'false',
+                        'data-state': 'unchecked'
+                    });
+                }
+                console.log('Individual checkbox changed, total:', totalCheckboxes, 'checked:', checkedCheckboxes);
+            });
+
+            // --- Main Search ---
+            let typingTimer;
+            const typingDelay = 500;
+            $('#main-search-input').on('input', function() {
+                console.log('Main search input changed:', $(this).val());
+                clearTimeout(typingTimer);
+                typingTimer = setTimeout(function() {
+                    $('#filterForm').submit();
+                }, typingDelay);
+            });
+
+            // --- Form Submission for Filters ---
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                console.log('Filter form submitted with search_query:', $('#main-search-input').val());
+
+                const url = new URL(window.location.href);
+                const params = new URLSearchParams(url.search);
+                params.set('page', 1);
+
+                const formData = $(this).serializeArray();
+                $.each(formData, function(i, field) {
+                    if (field.value) {
+                        params.set(field.name, field.value);
+                    } else {
+                        params.delete(field.name);
+                    }
+                });
+
+                const currentPerPage = "{{ per_page }}";
+                if (currentPerPage) {
+                    params.set('per_page', currentPerPage);
+                }
+
+                window.location.href = "{{ url_for('rename_data', table=table_name) }}?" + params.toString();
+            });
+
+            // --- Delete Form Submission Validation ---
+            $('#deleteForm').on('submit', function(e) {
+                const checkedRows = $('#data-table').find('input[name="rows_to_delete"]:checked');
+                const checkedColumns = $('input[name="columns_to_delete"]:checked');
+                const isRowDeletion = $(e.originalEvent.submitter).attr('name') === 'delete_rows';
+                const isColumnDeletion = $(e.originalEvent.submitter).attr('name') === 'delete_columns';
+
+                // Log form data
+                const formData = $(this).serializeArray();
+                const rowsToDelete = formData.filter(item => item.name === 'rows_to_delete').map(item => item.value);
+                console.log('Delete form submitted, rows_to_delete:', rowsToDelete);
+
+                if (isRowDeletion) {
+                    if (checkedRows.length === 0) {
+                        e.preventDefault();
+                        console.log('No rows selected for deletion');
+                        showCustomAlert('Please select at least one row to delete.');
+                        return;
+                    }
+
+                    let invalidRows = false;
+                    checkedRows.each(function() {
+                        const rowId = $(this).val();
+                        if (!rowId || rowId.trim() === '') {
+                            invalidRows = true;
+                            return false;
+                        }
+                    });
+                    if (invalidRows) {
+                        e.preventDefault();
+                        console.log('Invalid row IDs detected');
+                        showCustomAlert('One or more selected rows have invalid IDs. Please ensure all selected rows have valid IDs.');
+                        return;
+                    }
+
+                    if (!confirm(`Are you sure you want to delete ${checkedRows.length} row(s)?`)) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+
+                if (isColumnDeletion && checkedColumns.length === 0) {
+                    e.preventDefault();
+                    console.log('No columns selected for deletion');
+                    showCustomAlert('Please select at least one column to delete.');
+                    return;
+                }
+
+                if (isColumnDeletion) {
+                    if (!confirm(`Are you sure you want to delete ${checkedColumns.length} column(s)?`)) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            });
+
+            console.log("rename.html script initialization complete.");
+        } catch (error) {
+            console.error('Error in script:', error.message);
+        }
+    });
+</script>
+{% endblock %}

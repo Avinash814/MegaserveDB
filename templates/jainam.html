@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jainam Table Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script>
+        function updateMTM() {
+            const mainAllocation = parseFloat(document.getElementById('main_allocation').value) || 0;
+            const mainMTM = parseFloat(document.getElementById('main_mtm').value) || 0;
+            const allocations = document.querySelectorAll('.partner-allocation');
+            let totalAllocation = 0;
+
+            allocations.forEach(input => {
+                const allocation = parseFloat(input.value) || 0;
+                totalAllocation += allocation;
+                const rowId = input.getAttribute('data-row-id');
+                const mtmInput = document.getElementById(`mtm_${rowId}`);
+                if (mainAllocation > 0) {
+                    const ratio = allocation / mainAllocation;
+                    mtmInput.value = (mainMTM * ratio).toFixed(2);
+                } else {
+                    mtmInput.value = '0.00';
+                }
+            });
+
+            const allocationMessage = document.getElementById('allocation_message');
+            if (Math.abs(totalAllocation - mainAllocation) > 0.01) {
+                allocationMessage.textContent = `Total partner allocation (${totalAllocation.toFixed(2)}) does not match main allocation (${mainAllocation.toFixed(2)})`;
+                allocationMessage.classList.remove('hidden', 'text-green-600');
+                allocationMessage.classList.add('text-red-600');
+            } else {
+                allocationMessage.textContent = 'Allocations match';
+                allocationMessage.classList.remove('hidden', 'text-red-600');
+                allocationMessage.classList.add('text-green-600');
+            }
+        }
+
+        function confirmRemove(rowId, partnerAlias) {
+            if (confirm(`Are you sure you want to remove partner '${partnerAlias}'?`)) {
+                document.getElementById('remove_row_id').value = rowId;
+                document.getElementById('remove_partner_form').submit();
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-6">
+        {% if not user_id %}
+            <!-- Filter and Export Section -->
+            <h1 class="text-2xl font-bold mb-4">Jainam Table Management</h1>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="bg-{{ 'green' if category == 'success' else 'yellow' if category == 'warning' else 'red' }}-100 border border-{{ 'green' if category == 'success' else 'yellow' if category == 'warning' else 'red' }}-400 text-{{ 'green' if category == 'success' else 'yellow' if category == 'warning' else 'red' }}-700 px-4 py-3 rounded relative mb-4" role="alert">
+                            <span class="block sm:inline">{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('jainam') }}" class="bg-white p-6 rounded shadow-md">
+                <div class="mb-4">
+                    <label for="broker" class="block text-sm font-medium text-gray-700">Broker</label>
+                    <select id="broker" name="broker" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                        <option value="">Select Broker</option>
+                        {% for broker in brokers %}
+                            <option value="{{ broker }}">{{ broker }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="date" name="date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                </div>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Export to Jainam Table
+                </button>
+            </form>
+
+            <div class="mt-6">
+                <a href="{{ url_for('view_table', table='jainam') }}" class="text-indigo-600 hover:text-indigo-900">View Jainam Table</a>
+            </div>
+        {% else %}
+            <!-- Edit Section -->
+            <h1 class="text-2xl font-bold mb-4">Edit Jainam Data for {{ user_id }}</h1>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="bg-{{ 'green' if category == 'success' else 'yellow' if category == 'warning' else 'red' }}-100 border border-{{ 'green' if category == 'success' else 'yellow' if category == 'warning' else 'red' }}-400 text-{{ 'green' if category == 'success' else 'yellow' if category == 'warning' else 'red' }}-700 px-4 py-3 rounded relative mb-4" role="alert">
+                            <span class="block sm:inline">{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('edit_jainam', user_id=user_id) }}" class="bg-white p-6 rounded shadow-md">
+                <input type="hidden" name="action" value="update">
+                <h2 class="text-xl font-semibold mb-4">Main Record</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Main Alias</label>
+                        <input type="text" value="{{ main_record.main_alias }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Allocation</label>
+                        <input type="number" id="main_allocation" name="allocation" value="{{ main_record.allocation }}" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                        <input type="hidden" name="row_id" value="{{ main_record.row_id }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">MTM</label>
+                        <input type="number" id="main_mtm" value="{{ main_record.mtm }}" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Max Loss</label>
+                        <input type="number" name="max_loss" value="{{ main_record.max_loss }}" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Broker</label>
+                        <input type="text" name="broker" value="{{ main_record.broker }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Algo</label>
+                        <input type="number" name="algo" value="{{ main_record.algo }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" name="date" value="{{ main_record.date }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                </div>
+
+                <h2 class="text-xl font-semibold mt-6 mb-4">Partners</h2>
+                <div id="allocation_message" class="text-red-600 mb-4 hidden"></div>
+                {% for partner in partners %}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 border-b pb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Partner Alias</label>
+                            <input type="text" value="{{ partner.partner_alias }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Allocation</label>
+                            <input type="number" name="allocation" value="{{ partner.allocation }}" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm partner-allocation" data-row-id="{{ partner.row_id }}" oninput="updateMTM()">
+                            <input type="hidden" name="row_id" value="{{ partner.row_id }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">MTM</label>
+                            <input type="number" id="mtm_{{ partner.row_id }}" value="{{ partner.mtm }}" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                        </div>
+                        <div class="col-span-3">
+                            <button type="button" onclick="confirmRemove('{{ partner.row_id }}', '{{ partner.partner_alias }}')" class="text-red-600 hover:text-red-900">Remove Partner</button>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Save Changes
+                </button>
+            </form>
+
+            <h2 class="text-xl font-semibold mt-6 mb-4">Add New Partner</h2>
+            <form method="POST" action="{{ url_for('edit_jainam', user_id=user_id) }}" class="bg-white p-6 rounded shadow-md">
+                <input type="hidden" name="action" value="add_partner">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Partner Alias</label>
+                        <input type="text" name="new_partner_alias" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Allocation</label>
+                        <input type="number" name="new_partner_allocation" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                </div>
+                <button type="submit" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Add Partner
+                </button>
+            </form>
+
+            <form id="remove_partner_form" method="POST" action="{{ url_for('edit_jainam', user_id=user_id) }}" class="hidden">
+                <input type="hidden" name="action" value="remove_partner">
+                <input type="hidden" name="remove_row_id" id="remove_row_id">
+            </form>
+
+            <div class="mt-6">
+                <a href="{{ url_for('jainam') }}" class="text-indigo-600 hover:text-indigo-900">Back to Jainam Management</a>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

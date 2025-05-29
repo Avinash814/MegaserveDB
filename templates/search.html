@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}View Table: {{ table | default('unknown') }}{% endblock %}
+
+{% block head %}
+<!-- Bootstrap CSS (assumed in base.html, but ensure it's included) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --primary: 222.2 47.4% 11.2%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 222.2 84% 4.9%;
+        --radius: 0.5rem;
+        --bs-primary: #0d6efd;
+        --bs-secondary: #6c757d;
+        --bs-success: #02c27a;
+        --bs-danger: #fc185a;
+        --bs-warning: #ffc107;
+    }
+
+    body {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        font-family: "Noto Sans", sans-serif;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 70vh;
+        background-color: hsl(var(--card));
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--border));
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    #dataTable {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #dataTable th, #dataTable td {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        vertical-align: middle;
+        line-height: 1.2;
+        border: 1px solid hsl(var(--border));
+    }
+
+    #dataTable th {
+        background-color: hsl(var(--secondary));
+        color: hsl(var(--secondary-foreground));
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        white-space: nowrap;
+        min-width: 100px;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #dataTable td {
+        text-align: center;
+        color: hsl(var(--card-foreground));
+    }
+
+    .filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background-color: hsl(var(--card));
+        border-radius: var(--radius);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .filter-form input, .filter-form select {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--input));
+        background-color: transparent;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        transition: all 0.2s;
+    }
+
+    .filter-form input:focus-visible {
+        outline: 1px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+
+    .pagination-controls {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .pagination-controls button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        border: 1px solid hsl(var(--border));
+        border-radius: var(--radius);
+        background-color: hsl(var(--secondary));
+        color: hsl(var(--secondary-foreground));
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .pagination-controls button:hover:not(.disabled) {
+        background-color: hsl(var(--secondary) / 0.8);
+    }
+
+    .pagination-controls button.disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+
+    .pagination-controls span {
+        font-size: 0.9rem;
+        color: hsl(var(--muted-foreground));
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--border));
+        background-color: hsl(var(--secondary));
+        color: hsl(var(--secondary-foreground));
+    }
+
+    .alert-warning {
+        background-color: hsl(var(--bs-warning) / 0.2);
+        color: hsl(var(--bs-warning));
+    }
+
+    .alert-error {
+        background-color: hsl(var(--bs-danger) / 0.2);
+        color: hsl(var(--bs-danger));
+    }
+
+    .column-hidden {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="text-center mb-4">View Table: {{ table }}</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form id="filterForm" class="filter-form">
+        <div>
+            <label for="search_query" class="visually-hidden">Search</label>
+            <input type="text" id="search_query" name="search_query" value="{{ search_query or '' }}" placeholder="Search..." class="form-control">
+        </div>
+        <div style="min-width: 220px;">
+            <label for="date_range" class="visually-hidden">Date Range</label>
+            <input type="text" id="date_range" class="form-control flatpickr-input" placeholder="Select date range...">
+            <input type="hidden" name="from_date" id="from_date" value="{{ from_date or '' }}">
+            <input type="hidden" name="to_date" id="to_date" value="{{ to_date or '' }}">
+        </div>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            {% if session['role'] == 'admin' %}
+                <a href="{{ url_for('download_table', table=table, download_all='true', from_date=from_date or '', to_date=to_date or '', search_query=search_query or '') }}" id="downloadLink" class="btn btn-primary">Download</a>
+            {% endif %}
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#columnToggleModal">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-4">
+                    <path d="M5.5 3C4.67157 3 4 3.67157 4 4.5C4 5.32843 4.67157 6 5.5 6C6.32843 6 7 5.32843 7 4.5C7 3.67157 6.32843 3 5.5 3ZM3 5C3.01671 5 3.03323 4.99918 3.04952 4.99758C3.28022 6.1399 4.28967 7 5.5 7C6.71033 7 7.71978 6.1399 7.95048 4.99758C7.96677 4.99918 7.98329 5 8 5H13.5C13.7761 5 14 4.77614 14 4.5C14 4.22386 13.7761 4 13.5 4H8C7.98329 4 7.96677 4.00082 7.95048 4.00242C7.71978 2.86009 6.71033 2 5.5 2C4.28967 2 3.28022 2.86009 3.04952 4.00242C3.03323 4.00082 3.01671 4 3 4H1.5C1.22386 4 1 4.22386 1 4.5C1 4.77614 1.22386 5 1.5 5H3ZM11.9505 10.9976C11.7198 12.1399 10.7103 13 9.5 13C8.28967 13 7.28022 12.1399 7.04952 10.9976C7.03323 10.9992 7.01671 11 7 11H1.5C1.22386 11 1 10.7761 1 10.5C1 10.2239 1.22386 10 1.5 10H7C7.01671 10 7.03323 10.0008 7.04952 10.0024C7.28022 8.8601 8.28967 8 9.5 8C10.7103 8 11.7198 8.8601 11.9505 10.0024C11.9668 10.0008 11.9833 10 12 10H13.5C13.7761 10 14 10.2239 14 10.5C14 10.7761 13.7761 11 13.5 11H12C11.9833 11 11.9668 10.9992 11.9505 10.9976ZM8 10.5C8 9.67157 8.67157 9 9.5 9C10.3284 9 11 9.67157 11 10.5C11 11.3284 10.3284 12 9.5 12C8.67157 12 8 11.3284 8 10.5Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    </form>
+
+    <div class="table-container">
+        <table id="dataTable" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th data-column="0">row_id</th>
+                    {% for column in columns[1:] %}
+                        <th data-column="{{ loop.index }}">{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                    <tr>
+                        <td data-column="0">{{ row['row_id'] if 'row_id' in row else '' }}</td>
+                        {% for column in columns[1:] %}
+                            <td data-column="{{ loop.index }}">{{ row[column] if column in row else '' }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal for Column Toggle -->
+    <div class="modal fade" id="columnToggleModal" tabindex="-1" aria-labelledby="columnToggleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="columnToggleModalLabel">Toggle Table Columns</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input column-toggle" id="column-0" data-column="0" checked>
+                        <label class="form-check-label" for="column-0">row_id</label>
+                    </div>
+                    {% for column in columns[1:] %}
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input column-toggle" id="column-{{ loop.index }}" data-column="{{ loop.index }}" checked>
+                            <label class="form-check-label" for="column-{{ loop.index }}">{{ column }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pagination-controls">
+        <select id="rows_per_page" class="form-select form-select-sm d-inline-block" style="width: auto;">
+            <option value="500" {% if rows_per_page == 500 %}selected{% endif %}>500</option>
+            <option value="1000" {% if rows_per_page == 1000 %}selected{% endif %}>1000</option>
+            <option value="1500" {% if rows_per_page == 1500 %}selected{% endif %}>1500</option>
+            <option value="3000" {% if rows_per_page == 3000 %}selected{% endif %}>3000</option>
+        </select>
+        <span class="ms-2">Page {{ page }} of {{ total_pages }}</span>
+            <a href="{{ url_for('view_table', table=table, page=1, rows_per_page=rows_per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="btn btn-sm btn-outline-primary {% if page <= 1 %}disabled{% endif %}"><<</a>
+            <a href="{{ url_for('view_table', table=table, page=page-1, rows_per_page=rows_per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="btn btn-sm btn-outline-primary {% if page <= 1 %}disabled{% endif %}"><</a>
+            <a href="{{ url_for('view_table', table=table, page=page+1, rows_per_page=rows_per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="btn btn-sm btn-outline-primary {% if page >= total_pages %}disabled{% endif %}">></a>
+            <a href="{{ url_for('view_table', table=table, page=total_pages, rows_per_page=rows_per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="btn btn-sm btn-outline-primary {% if page >= total_pages %}disabled{% endif %}">>></a>
+        </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('Initializing view_table.html script...');
+
+        // Element references
+        const filterForm = document.getElementById('filterForm');
+        const searchInput = document.getElementById('search_query');
+        const dateRangeInput = document.getElementById('date_range');
+        const fromDateInput = document.getElementById('from_date');
+        const toDateInput = document.getElementById('to_date');
+        const rowsPerPageSelect = document.getElementById('rows_per_page');
+        const downloadLink = document.getElementById('downloadLink');
+        const table = document.getElementById('dataTable');
+        const pageInfo = document.getElementById('page-info');
+        const firstPageBtn = document.getElementById('first-page-btn');
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        const nextPageBtn = document.getElementById('next-page-btn');
+        const lastPageBtn = document.getElementById('last-page-btn');
+
+        // Flatpickr initialization
+        flatpickr(dateRangeInput, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            defaultDate: (fromDateInput.value && toDateInput.value) ? [fromDateInput.value, toDateInput.value] : [],
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    const fromDate = instance.formatDate(selectedDates[0], 'Y-m-d');
+                    const toDate = instance.formatDate(selectedDates[1], 'Y-m-d');
+                    fromDateInput.value = fromDate;
+                    toDateInput.value = toDate;
+                    document.getElementById('pagination_from_date').value = fromDate;
+                    document.getElementById('pagination_to_date').value = toDate;
+                    updateDownloadLink();
+                    fetchTableData(1);
+                } else if (selectedDates.length === 0) {
+                    fromDateInput.value = '';
+                    toDateInput.value = '';
+                    document.getElementById('pagination_from_date').value = '';
+                    document.getElementById('pagination_to_date').value = '';
+                    updateDownloadLink();
+                    fetchTableData(1);
+                }
+            },
+            onClose: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length < 2 && selectedDates.length > 0) {
+                    instance.setDate([]);
+                    fromDateInput.value = '';
+                    toDateInput.value = '';
+                    document.getElementById('pagination_from_date').value = '';
+                    document.getElementById('pagination_to_date').value = '';
+                    updateDownloadLink();
+                    fetchTableData(1);
+                }
+            }
+        });
+
+        // Column toggle
+        document.querySelectorAll('.column-toggle').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const columnIndex = this.getAttribute('data-column');
+                console.log(`Toggling column ${columnIndex}, checked: ${this.checked}`);
+                document.querySelectorAll(`[data-column="${columnIndex}"]`).forEach(cell => {
+                    cell.classList.toggle('column-hidden', !this.checked);
+                });
+            });
+        });
+
+        // Search with debounce
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            document.getElementById('pagination_search_query').value = this.value;
+            updateDownloadLink();
+            searchTimeout = setTimeout(() => {
+                console.log(`Fetching data for search: ${this.value}`);
+                fetchTableData(1);
+            }, 500);
+        });
+
+        // Rows per page change
+        rowsPerPageSelect.addEventListener('change', function() {
+            console.log(`Rows per page changed to: ${this.value}`);
+            fetchTableData(1);
+        });
+
+        // Update download link
+        function updateDownloadLink() {
+            if (!downloadLink) return;
+            const url = new URL(downloadLink.href, window.location.origin);
+            url.searchParams.set('search_query', searchInput.value || '');
+            url.searchParams.set('from_date', fromDateInput.value || '');
+            url.searchParams.set('to_date', toDateInput.value || '');
+            downloadLink.href = url.toString();
+            console.log('Download link updated:', downloadLink.href);
+        }
+
+        // Fetch table data via AJAX
+        window.fetchTableData = function(page) {
+            const params = {
+                search_query: searchInput.value,
+                from_date: fromDateInput.value,
+                to_date: toDateInput.value,
+                page: page,
+                rows_per_page: rowsPerPageSelect.value
+            };
+            const url = new URL("{{ url_for('view_table', table=table) }}", window.location.origin);
+            Object.keys(params).forEach(key => url.searchParams.set(key, params[key]));
+
+            console.log('Fetching table data:', url.toString());
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Received data:', { page: data.page, total_pages: data.total_pages, row_count: data.data.length });
+
+                // Update table
+                const tbody = table.querySelector('tbody');
+                tbody.innerHTML = data.data.map(row => `
+                    <tr>
+                        <td data-column="0">${row['row_id'] || ''}</td>
+                        ${data.columns.slice(1).map((col, i) => `
+                            <td data-column="${i + 1}">${row[col] || ''}</td>
+                        `).join('')}
+                    </tr>
+                `).join('');
+
+                // Update pagination
+                pageInfo.textContent = `Page ${data.page} of ${data.total_pages}`;
+                document.getElementById('pagination_page').value = data.page;
+                document.getElementById('pagination_search_query').value = data.search_query;
+                document.getElementById('pagination_from_date').value = data.from_date;
+                document.getElementById('pagination_to_date').value = data.to_date;
+
+                firstPageBtn.classList.toggle('disabled', data.page <= 1);
+                prevPageBtn.classList.toggle('disabled', data.page <= 1);
+                nextPageBtn.classList.toggle('disabled', data.page >= data.total_pages);
+                lastPageBtn.classList.toggle('disabled', data.page >= data.total_pages);
+
+                prevPageBtn.setAttribute('onclick', `goToPage(${data.page - 1})`);
+                nextPageBtn.setAttribute('onclick', `goToPage(${data.page + 1})`);
+                lastPageBtn.setAttribute('onclick', `goToPage(${data.total_pages})`);
+            })
+            .catch(error => {
+                console.error('Error fetching table data:', {
+                    message: error.message,
+                    stack: error.stack,
+                    url: url.toString()
+                });
+            });
+        };
+
+        // Navigate to page
+        window.goToPage = function(page) {
+            if (page > 0) {
+                console.log(`Navigating to page ${page}`);
+                fetchTableData(page);
+            }
+        };
+
+        // Apply initial search if present
+        if (searchInput.value) {
+            searchInput.dispatchEvent(new Event('input'));
+        }
+
+        // Auto-close sidebar
+        setTimeout(() => {
+            document.body.classList.remove('toggled');
+            console.log('Sidebar auto-closed');
+        }, 100);
+    });
+</script>
+{% endblock %}
