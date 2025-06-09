@@ -33,20 +33,26 @@
             <form method="POST" action="{{ url_for('admin.upload_files') }}" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="table" class="form-label">Select Table</label>
-                    <select class="form-select" id="table" name="table" required>
+                    <select class="form-select" id="table" name="table" required onchange="toggleDteDropdown()">
                         {% for table in tables %}
-                            <option value="{{ table }}">{{ table }}</option>
+                            {% set display_name = 'All Users' if table == 'users' else 'Summary Orderbook' if table == 'orderbook' else 'Orderbook' if table == 'ob' else table %}
+                            <option value="{{ table }}">{{ display_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
+                <!-- <div class="mb-3" id="dte_dropdown" style="display: none;">
+                    <label for="dte" class="form-label">Select DTE</label>
+                    <select class="form-select" id="dte" name="dte">
+                        <option value="0dte">0DTE</option>
+                        <option value="1dte">1DTE</option>
+                        <option value="2dte">2DTE</option>
+                        <option value="3dte">3DTE</option>
+                        <option value="4dte">4DTE</option>
+                    </select>
+                </div> -->
                 <div class="upload-container">
                     <div class="upload-button-group">
                         <button type="button" class="upload-button" id="uploadTrigger">Select files</button>
-                        <!-- <div class="upload-icons">
-                            <span class="file-icon drive-icon" id="driveTrigger" title="Select from Google Drive">
-                                <img src="https://www.google.com/drive/static/images/drive/logo-drive-2x.png" alt="Drive">
-                            </span>
-                        </div> -->
                     </div>
                     <div class="upload-box" id="uploadBox">
                         <input type="file" id="file_upload" name="file_upload" class="file-input" multiple accept=".csv,.xlsx,.xls">
@@ -60,6 +66,20 @@
     </div>
 </div>
 <script>
+    // Function to toggle DTE dropdown visibility based on selected table
+    function toggleDteDropdown() {
+        const tableSelect = document.getElementById('table');
+        const dteDropdown = document.getElementById('dte_dropdown');
+        if (tableSelect.value === 'users') {
+            dteDropdown.style.display = 'block';
+        } else {
+            dteDropdown.style.display = 'none';
+        }
+    }
+
+    // Initialize DTE dropdown visibility on page load
+    document.addEventListener('DOMContentLoaded', toggleDteDropdown);
+
     // Upload Functionality
     const uploadTrigger = document.getElementById('uploadTrigger');
     const uploadBox = document.getElementById('uploadBox');

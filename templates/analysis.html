@@ -18,11 +18,7 @@
     .table-smaller td {
         padding: 0.3rem; /* Reduced padding for compact table */
     }
-    .table-smaller th.new-column{
-        background-color: #161515; /* Light red for new columns */
-    }
-
-
+    .table-smaller th.new-column,
     .table-smaller td.new-column {
         background-color: #e6ffe6; /* Light green for new columns */
     }
@@ -78,7 +74,7 @@
                 <div class="form-container">
                     <h3 class="text-center mb-4">Hedge Analysis</h3>
                     <!-- File Upload Form -->
-                    <form id="upload-form" method="POST" action="{{ url_for('admin.admin_analysis_page') }}" class="row g-3 align-items-center" enctype="multipart/form-data">
+                    <form id="upload-form" method="POST" action="{{ url_for('analysis.analysis_page') }}" class="row g-3 align-items-center" enctype="multipart/form-data">
                         <div class="col-md-6">
                             <label for="file_upload" class="form-label">Upload Orderbook CSV</label>
                             <input type="file" id="file_upload" name="file_upload" class="form-control" accept=".csv" required>
@@ -90,7 +86,7 @@
                     </form>
                     <!-- Download Form -->
                     {% if data %}
-                    <form id="download-form" method="POST" action="{{ url_for('admin.admin_analysis_page') }}" class="row g-3 align-items-center mt-3">
+                    <form id="download-form" method="POST" action="{{ url_for('analysis.analysis_page') }}" class="row g-3 align-items-center mt-3">
                         <div class="col-md-3">
                             <label class="form-label"> </label>
                             <button type="submit" name="export" value="csv" class="btn btn-grd-success w-100 mt-3">Download</button>

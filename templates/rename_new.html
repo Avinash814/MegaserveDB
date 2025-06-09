@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Database Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --background: #f8fafc;
+            --card-background: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tabs {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 16px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: white;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--text-primary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .table tbody tr.selected {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .editable-cell {
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+
+        .editable-cell:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .cell-editor {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 8px;
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 4px;
+            z-index: 20;
+        }
+
+        .cell-editor input {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .pagination-info {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            position: relative;
+        }
+
+        .search-input i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .search-input input {
+            padding-left: 40px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: var(--success-color);
+        }
+
+        .badge-warning {
+            background: var(--warning-color);
+        }
+
+        .badge-danger {
+            background: var(--danger-color);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--warning-color);
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger-color);
+            color: #991b1b;
+        }
+
+        .bulk-operations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .operation-card {
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .operation-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow);
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .gap-2 {
+            gap: 8px;
+        }
+
+        .gap-4 {
+            gap: 16px;
+        }
+
+        .mb-4 {
+            margin-bottom: 16px;
+        }
+
+        .mt-4 {
+            margin-top: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .search-filters {
+                grid-template-columns: 1fr;
+            }
+            
+            .pagination {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-database"></i> Advanced Database Manager</h1>
+            <p>Powerful tools for managing your database tables with precision and control</p>
+        </div>
+
+        <!-- Table Selection -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-table"></i>
+                <span class="card-title">Select Table</span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Choose a table to manage:</label>
+                <select id="tableSelect" class="form-control">
+                    <option value="">-- Select a table --</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="hidden">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="data">
+                    <i class="fas fa-table"></i> Data View
+                </button>
+                <button class="tab" data-tab="bulk">
+                    <i class="fas fa-edit"></i> Bulk Operations
+                </button>
+                <button class="tab" data-tab="filters">
+                    <i class="fas fa-filter"></i> Advanced Filters
+                </button>
+                <button class="tab" data-tab="columns">
+                    <i class="fas fa-columns"></i> Column Manager
+                </button>
+                <button class="tab" data-tab="export">
+                    <i class="fas fa-file-export"></i> Export/Import
+                </button>
+                <button class="tab" data-tab="audit">
+                    <i class="fas fa-history"></i> Audit Log
+                </button>
+            </div>
+
+            <!-- Data View Tab -->
+            <div id="tab-data" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-table"></i>
+                        <span class="card-title">Table Data: <span id="currentTableName"></span></span>
+                    </div>
+                    
+                    <!-- Search and Filters -->
+                    <div class="search-filters">
+                        <div class="search-input">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="globalSearch" class="form-control" placeholder="Search all columns...">
+                        </div>
+                        <div>
+                            <input type="text" id="dateRange" class="form-control" placeholder="Select date range...">
+                        </div>
+                        <div>
+                            <select id="rowsPerPage" class="form-control">
+                                <option value="10">10 rows</option>
+                                <option value="25">25 rows</option>
+                                <option value="50">50 rows</option>
+                                <option value="100">100 rows</option>
+                                <option value="500">500 rows</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button id="refreshData" class="btn btn-primary">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Selected Rows Actions -->
+                    <div id="selectedActions" class="hidden mb-4">
+                        <div class="flex items-center gap-4">
+                            <span id="selectedCount" class="badge"></span>
+                            <button id="deleteSelected" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Selected
+                            </button>
+                            <button id="exportSelected" class="btn btn-secondary">
+                                <i class="fas fa-download"></i> Export Selected
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="table-container">
+                        <table id="dataTable" class="table">
+                            <thead id="tableHead"></thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination">
+                        <div class="pagination-info">
+                            <span id="paginationInfo"></span>
+                        </div>
+                        <div class="pagination-controls">
+                            <button id="firstPage" class="btn btn-outline"><i class="fas fa-angle-double-left"></i></button>
+                            <button id="prevPage" class="btn btn-outline"><i class="fas fa-angle-left"></i></button>
+                            <span id="pageInfo" class="badge"></span>
+                            <button id="nextPage" class="btn btn-outline"><i class="fas fa-angle-right"></i></button>
+                            <button id="lastPage" class="btn btn-outline"><i class="fas fa-angle-double-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Operations Tab -->
+            <div id="tab-bulk" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-edit"></i>
+                        <span class="card-title">Bulk Operations</span>
+                    </div>
+                    
+                    <div class="bulk-operations">
+                        <!-- Bulk Update -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-edit"></i> Bulk Update</h3>
+                            <div class="form-group">
+                                <label class="form-label">Target Column:</label>
+                                <select id="bulkUpdateColumn" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Find Value:</label>
+                                <input type="text" id="bulkFindValue" class="form-control" placeholder="Value to find">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Replace With:</label>
+                                <input type="text" id="bulkReplaceValue" class="form-control" placeholder="New value">
+                            </div>
+                            <button id="executeBulkUpdate" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Execute Update
+                            </button>
+                        </div>
+
+                        <!-- Bulk Delete -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-trash"></i> Bulk Delete</h3>
+                            <div class="form-group">
+                                <label class="form-label">Target Column:</label>
+                                <select id="bulkDeleteColumn" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Value to Match:</label>
+                                <input type="text" id="bulkDeleteValue" class="form-control" placeholder="Value to delete">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Match Type:</label>
+                                <select id="bulkDeleteMatch" class="form-control">
+                                    <option value="exact">Exact Match</option>
+                                    <option value="contains">Contains</option>
+                                    <option value="starts">Starts With</option>
+                                    <option value="ends">Ends With</option>
+                                </select>
+                            </div>
+                            <button id="executeBulkDelete" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Execute Delete
+                            </button>
+                        </div>
+
+                        <!-- Bulk Insert -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-plus"></i> Bulk Insert</h3>
+                            <div class="form-group">
+                                <label class="form-label">CSV Data:</label>
+                                <textarea id="bulkInsertData" class="form-control" rows="6" placeholder="Paste CSV data here..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox">
+                                    <input type="checkbox" id="bulkInsertHeaders"> First row contains headers
+                                </label>
+                            </div>
+                            <button id="executeBulkInsert" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Execute Insert
+                            </button>
+                        </div>
+
+                        <!-- SQL Query -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-code"></i> Custom SQL Query</h3>
+                            <div class="form-group">
+                                <label class="form-label">SQL Query:</label>
+                                <textarea id="customSQL" class="form-control" rows="6" placeholder="Enter your SQL query..."></textarea>
+                            </div>
+                            <button id="executeSQL" class="btn btn-warning">
+                                <i class="fas fa-play"></i> Execute Query
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Filters Tab -->
+            <div id="tab-filters" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-filter"></i>
+                        <span class="card-title">Advanced Filters</span>
+                    </div>
+                    
+                    <div id="filterContainer">
+                        <div class="mb-4">
+                            <button id="addFilter" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Filter
+                            </button>
+                            <button id="clearFilters" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear All
+                            </button>
+                            <button id="applyFilters" class="btn btn-success">
+                                <i class="fas fa-check"></i> Apply Filters
+                            </button>
+                        </div>
+                        
+                        <div id="filterList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column Manager Tab -->
+            <div id="tab-columns" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-columns"></i>
+                        <span class="card-title">Column Manager</span>
+                    </div>
+                    
+                    <div class="bulk-operations">
+                        <!-- Add Column -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-plus"></i> Add Column</h3>
+                            <div class="form-group">
+                                <label class="form-label">Column Name:</label>
+                                <input type="text" id="newColumnName" class="form-control" placeholder="Column name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Data Type:</label>
+                                <select id="newColumnType" class="form-control">
+                                    <option value="VARCHAR(255)">Text (VARCHAR)</option>
+                                    <option value="INT">Integer</option>
+                                    <option value="DECIMAL(10,2)">Decimal</option>
+                                    <option value="DATE">Date</option>
+                                    <option value="DATETIME">DateTime</option>
+                                    <option value="TEXT">Long Text</option>
+                                    <option value="BOOLEAN">Boolean</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default Value:</label>
+                                <input type="text" id="newColumnDefault" class="form-control" placeholder="Default value (optional)">
+                            </div>
+                            <button id="addColumn" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Column
+                            </button>
+                        </div>
+
+                        <!-- Rename Column -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-edit"></i> Rename Column</h3>
+                            <div class="form-group">
+                                <label class="form-label">Select Column:</label>
+                                <select id="renameColumnSelect" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">New Name:</label>
+                                <input type="text" id="renameColumnNew" class="form-control" placeholder="New column name">
+                            </div>
+                            <button id="renameColumn" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> Rename Column
+                            </button>
+                        </div>
+
+                        <!-- Delete Column -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-trash"></i> Delete Column</h3>
+                            <div class="form-group">
+                                <label class="form-label">Select Column:</label>
+                                <select id="deleteColumnSelect" class="form-control"></select>
+                            </div>
+                            <button id="deleteColumn" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Column
+                            </button>
+                        </div>
+
+                        <!-- Modify Column -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-cog"></i> Modify Column</h3>
+                            <div class="form-group">
+                                <label class="form-label">Select Column:</label>
+                                <select id="modifyColumnSelect" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">New Data Type:</label>
+                                <select id="modifyColumnType" class="form-control">
+                                    <option value="VARCHAR(255)">Text (VARCHAR)</option>
+                                    <option value="INT">Integer</option>
+                                    <option value="DECIMAL(10,2)">Decimal</option>
+                                    <option value="DATE">Date</option>
+                                    <option value="DATETIME">DateTime</option>
+                                    <option value="TEXT">Long Text</option>
+                                    <option value="BOOLEAN">Boolean</option>
+                                </select>
+                            </div>
+                            <button id="modifyColumn" class="btn btn-warning">
+                                <i class="fas fa-cog"></i> Modify Column
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export/Import Tab -->
+            <div id="tab-export" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-file-export"></i>
+                        <span class="card-title">Data Export/Import</span>
+                    </div>
+                    
+                    <div class="bulk-operations">
+                        <!-- Export Data -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-download"></i> Export Data</h3>
+                            <div class="form-group">
+                                <label class="form-label">Export Format:</label>
+                                <select id="exportFormat" class="form-control">
+                                    <option value="csv">CSV</option>
+                                    <option value="json">JSON</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="sql">SQL</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox">
+                                    <input type="checkbox" id="exportHeaders" checked> Include headers
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox">
+                                    <input type="checkbox" id="exportFiltered"> Export filtered data only
+                                </label>
+                            </div>
+                            <button id="exportData" class="btn btn-success">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                        </div>
+
+                        <!-- Import Data -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-upload"></i> Import Data</h3>
+                            <div class="form-group">
+                                <label class="form-label">Select File:</label>
+                                <input type="file" id="importFile" class="form-control" accept=".csv,.json,.xlsx">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Import Mode:</label>
+                                <select id="importMode" class="form-control">
+                                    <option value="append">Append to existing data</option>
+                                    <option value="replace">Replace existing data</option>
+                                    <option value="update">Update existing records</option>
+                                </select>
+                            </div>
+                            <button id="importData" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Import Data
+                            </button>
+                        </div>
+
+                        <!-- Backup/Restore -->
+                        <div class="operation-card">
+                            <h3 class="mb-4"><i class="fas fa-shield-alt"></i> Backup & Restore</h3>
+                            <div class="form-group">
+                                <button id="createBackup" class="btn btn-warning">
+                                    <i class="fas fa-save"></i> Create Backup
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Restore from Backup:</label>
+                                <input type="file" id="restoreFile" class="form-control" accept=".sql,.json">
+                            </div>
+                            <button id="restoreBackup" class="btn btn-danger">
+                                <i class="fas fa-undo"></i> Restore Backup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Log Tab -->
+            <div id="tab-audit" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-history"></i>
+                        <span class="card-title">Audit Log</span>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table id="auditTable" class="table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Table</th>
+                                    <th>Details</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditBody">
+                                <tr>
+                                    <td>2024-01-15 10:30:00</td>
+                                    <td>admin</td>
+                                    <td>UPDATE</td>
+                                    <td>users</td>
+                                    <td>Updated 5 rows in name column</td>
+                                    <td><span class="badge badge-success">Success</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2024-01-15 10:25:00</td>
+                                    <td>admin</td>
+                                    <td>DELETE</td>
+                                    <td>products</td>
+                                    <td>Deleted 2 rows</td>
+                                    <td><span class="badge badge-success">Success</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2024-01-15 10:20:00</td>
+                                    <td>admin</td>
+                                    <td>INSERT</td>
+                                    <td>orders</td>
+                                    <td>Inserted 10 new records</td>
+                                    <td><span class="badge badge-success">Success</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden">
+            <div class="loading">
+                <i class="fas fa-spinner"></i>
+                Loading...
+            </div>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+    </div>
+
+    <script>
+        class DatabaseManager {
+            constructor() {
+                this.currentTable = '';
+                this.tableData = [];
+                this.tableColumns = [];
+                this.currentPage = 1;
+                this.rowsPerPage = 25;
+                this.totalRows = 0;
+                this.selectedRows = new Set();
+                this.sortColumn = '';
+                this.sortDirection = 'asc';
+                this.filters = [];
+                this.auditLog = [];
+                
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                this.loadTables();
+                this.initDatePicker();
+            }
+
+            bindEvents() {
+                // Tab switching
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
+                });
+
+                // Table selection
+                document.getElementById('tableSelect').addEventListener('change', (e) => {
+                    this.selectTable(e.target.value);
+                });
+
+                // Search and filters
+                document.getElementById('globalSearch').addEventListener('input', (e) => {
+                    this.debounce(() => this.filterData(), 300)();
+                });
+
+                document.getElementById('rowsPerPage').addEventListener('change', (e) => {
+                    this.rowsPerPage = parseInt(e.target.value);
+                    this.currentPage = 1;
+                    this.renderTable();
+                });
+
+                // Pagination
+                document.getElementById('firstPage').addEventListener('click', () => this.goToPage(1));
+                document.getElementById('prevPage').addEventListener('click', () => this.goToPage(this.currentPage - 1));
+                document.getElementById('nextPage').addEventListener('click', () => this.goToPage(this.currentPage + 1));
+                document.getElementById('lastPage').addEventListener('click', () => this.goToPage(this.getTotalPages()));
+
+                // Data actions
+                document.getElementById('refreshData').addEventListener('click', () => this.loadTableData());
+                document.getElementById('deleteSelected').addEventListener('click', () => this.deleteSelectedRows());
+
+                // Bulk operations
+                document.getElementById('executeBulkUpdate').addEventListener('click', () => this.executeBulkUpdate());
+                document.getElementById('executeBulkDelete').addEventListener('click', () => this.executeBulkDelete());
+                document.getElementById('executeBulkInsert').addEventListener('click', () => this.executeBulkInsert());
+                document.getElementById('executeSQL').addEventListener('click', () => this.executeCustomSQL());
+
+                // Column management
+                document.getElementById('addColumn').addEventListener('click', () => this.addColumn());
+                document.getElementById('renameColumn').addEventListener('click', () => this.renameColumn());
+                document.getElementById('deleteColumn').addEventListener('click', () => this.deleteColumn());
+                document.getElementById('modifyColumn').addEventListener('click', () => this.modifyColumn());
+
+                // Export/Import
+                document.getElementById('exportData').addEventListener('click', () => this.exportData());
+                document.getElementById('importData').addEventListener('click', () => this.importData());
+                document.getElementById('createBackup').addEventListener('click', () => this.createBackup());
+                document.getElementById('restoreBackup').addEventListener('click', () => this.restoreBackup());
+
+                // Filters
+                document.getElementById('addFilter').addEventListener('click', () => this.addFilter());
+                document.getElementById('clearFilters').addEventListener('click', () => this.clearFilters());
+                document.getElementById('applyFilters').addEventListener('click', () => this.applyFilters());
+            }
+
+            initDatePicker() {
+                flatpickr("#dateRange", {
+                    mode: "range",
+                    dateFormat: "Y-m-d",
+                    onChange: (selectedDates) => {
+                        if (selectedDates.length === 2) {
+                            this.filterData();
+                        }
+                    }
+                });
+            }
+
+            async loadTables() {
+                try {
+                    // Mock data - replace with actual API call
+                    const tables = ['users', 'products', 'orders', 'categories', 'upload_log'];
+                    const select = document.getElementById('tableSelect');
+                    select.innerHTML = '<option value="">-- Select a table --</option>';
+                    
+                    tables.forEach(table => {
+                        const option = document.createElement('option');
+                        option.value = table;
+                        option.textContent = table;
+                        select.appendChild(option);
+                    });
+                } catch (error) {
+                    this.showAlert('Error loading tables: ' + error.message, 'danger');
+                }
+            }
+
+            async selectTable(tableName) {
+                if (!tableName) {
+                    document.getElementById('mainContent').classList.add('hidden');
+                    return;
+                }
+
+                this.currentTable = tableName;
+                document.getElementById('currentTableName').textContent = tableName;
+                document.getElementById('mainContent').classList.remove('hidden');
+                
+                await this.loadTableData();
+                this.populateColumnSelects();
+            }
+
+            async loadTableData() {
+                this.showLoading(true);
+                
+                try {
+                    // Mock data - replace with actual API call
+                    const mockData = this.generateMockData();
+                    this.tableData = mockData.data;
+                    this.tableColumns = mockData.columns;
+                    this.totalRows = mockData.total;
+                    
+                    this.renderTable();
+                    this.updatePagination();
+                    
+                    this.logAction('LOAD', `Loaded ${this.totalRows} rows from ${this.currentTable}`);
+                } catch (error) {
+                    this.showAlert('Error loading table data: ' + error.message, 'danger');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            generateMockData() {
+                const columns = ['id', 'name', 'email', 'status', 'created_at', 'updated_at'];
+                const data = [];
+                
+                for (let i = 1; i <= 100; i++) {
+                    data.push({
+                        id: i,
+                        name: `User ${i}`,
+                        email: `user${i}@example.com`,
+                        status: i % 2 === 0 ? 'active' : 'inactive',
+                        created_at: new Date(2024, 0, i).toISOString().split('T')[0],
+                        updated_at: new Date().toISOString().split('T')[0]
+                    });
+                }
+                
+                return { columns, data, total: data.length };
+            }
+
+            renderTable() {
+                const thead = document.getElementById('tableHead');
+                const tbody = document.getElementById('tableBody');
+                
+                // Clear existing content
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+                
+                if (this.tableColumns.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="100%" style="text-align: center;">No data available</td></tr>';
+                    return;
+                }
+                
+                // Create header
+                const headerRow = document.createElement('tr');
+                
+                // Select all checkbox
+                const selectAllTh = document.createElement('th');
+                selectAllTh.innerHTML = '<input type="checkbox" id="selectAll" class="checkbox">';
+                headerRow.appendChild(selectAllTh);
+                
+                // Column headers
+                this.tableColumns.forEach(column => {
+                    const th = document.createElement('th');
+                    th.innerHTML = `
+                        <div style="cursor: pointer;" onclick="dbManager.sortBy('${column}')">
+                            ${column}
+                            ${this.sortColumn === column ? (this.sortDirection === 'asc' ? '↑' : '↓') : ''}
+                        </div>
+                    `;
+                    headerRow.appendChild(th);
+                });
+                
+                // Actions header
+                const actionsTh = document.createElement('th');
+                actionsTh.textContent = 'Actions';
+                headerRow.appendChild(actionsTh);
+                
+                thead.appendChild(headerRow);
+                
+                // Bind select all event
+                document.getElementById('selectAll').addEventListener('change', (e) => {
+                    this.selectAllRows(e.target.checked);
+                });
+                
+                // Create data rows
+                const startIndex = (this.currentPage - 1) * this.rowsPerPage;
+                const endIndex = Math.min(startIndex + this.rowsPerPage, this.tableData.length);
+                
+                for (let i = startIndex; i < endIndex; i++) {
+                    const row = this.tableData[i];
+                    const tr = document.createElement('tr');
+                    
+                    if (this.selectedRows.has(row.id)) {
+                        tr.classList.add('selected');
+                    }
+                    
+                    // Select checkbox
+                    const selectTd = document.createElement('td');
+                    selectTd.innerHTML = `<input type="checkbox" class="checkbox row-select" data-id="${row.id}" ${this.selectedRows.has(row.id) ? 'checked' : ''}>`;
+                    tr.appendChild(selectTd);
+                    
+                    // Data cells
+                    this.tableColumns.forEach(column => {
+                        const td = document.createElement('td');
+                        td.classList.add('editable-cell');
+                        td.textContent = row[column] || '';
+                        td.addEventListener('click', () => this.editCell(td, row.id, column));
+                        tr.appendChild(td);
+                    });
+                    
+                    // Actions cell
+                    const actionsTd = document.createElement('td');
+                    actionsTd.innerHTML = `
+                        <button class="btn btn-danger" onclick="dbManager.deleteRow(${row.id})" style="padding: 4px 8px; font-size: 12px;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    tr.appendChild(actionsTd);
+                    
+                    tbody.appendChild(tr);
+                }
+                
+                // Bind row selection events
+                document.querySelectorAll('.row-select').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const id = parseInt(e.target.dataset.id);
+                        if (e.target.checked) {
+                            this.selectedRows.add(id);
+                        } else {
+                            this.selectedRows.delete(id);
+                        }
+                        this.updateSelectedActions();
+                    });
+                });
+                
+                this.updateSelectedActions();
+            }
+
+            editCell(cell, rowId, column) {
+                const currentValue = cell.textContent;
+                
+                // Create input element
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentValue;
+                input.style.width = '100%';
+                input.style.border = 'none';
+                input.style.outline = 'none';
+                input.style.background = 'transparent';
+                
+                // Replace cell content with input
+                cell.innerHTML = '';
+                cell.appendChild(input);
+                input.focus();
+                
+                // Handle save on blur or enter
+                const saveEdit = async () => {
+                    const newValue = input.value;
+                    if (newValue !== currentValue) {
+                        await this.updateCell(rowId, column, newValue);
+                    }
+                    cell.textContent = newValue;
+                };
+                
+                input.addEventListener('blur', saveEdit);
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        saveEdit();
+                    }
+                });
+            }
+
+            async updateCell(rowId, column, value) {
+                try {
+                    // Mock API call - replace with actual implementation
+                    const rowIndex = this.tableData.findIndex(row => row.id === rowId);
+                    if (rowIndex !== -1) {
+                        this.tableData[rowIndex][column] = value;
+                        this.logAction('UPDATE', `Updated ${column} to "${value}" for row ${rowId}`);
+                        this.showAlert('Cell updated successfully', 'success');
+                    }
+                } catch (error) {
+                    this.showAlert('Error updating cell: ' + error.message, 'danger');
+                }
+            }
+
+            selectAllRows(checked) {
+                this.selectedRows.clear();
+                if (checked) {
+                    const startIndex = (this.currentPage - 1) * this.rowsPerPage;
+                    const endIndex = Math.min(startIndex + this.rowsPerPage, this.tableData.length);
+                    
+                    for (let i = startIndex; i < endIndex; i++) {
+                        this.selectedRows.add(this.tableData[i].id);
+                    }
+                }
+                
+                document.querySelectorAll('.row-select').forEach(checkbox => {
+                    checkbox.checked = checked;
+                });
+                
+                this.updateSelectedActions();
+            }
+
+            updateSelectedActions() {
+                const count = this.selectedRows.size;
+                const actionsDiv = document.getElementById('selectedActions');
+                const countSpan = document.getElementById('selectedCount');
+                
+                if (count > 0) {
+                    actionsDiv.classList.remove('hidden');
+                    countSpan.textContent = `${count} selected`;
+                } else {
+                    actionsDiv.classList.add('hidden');
+                }
+            }
+
+            async deleteSelectedRows() {
+                if (this.selectedRows.size === 0) return;
+                
+                if (!confirm(`Are you sure you want to delete ${this.selectedRows.size} rows?`)) {
+                    return;
+                }
+                
+                try {
+                    // Mock API call - replace with actual implementation
+                    this.tableData = this.tableData.filter(row => !this.selectedRows.has(row.id));
+                    this.totalRows -= this.selectedRows.size;
+                    
+                    this.logAction('DELETE', `Deleted ${this.selectedRows.size} rows`);
+                    this.selectedRows.clear();
+                    this.renderTable();
+                    this.updatePagination();
+                    this.showAlert('Rows deleted successfully', 'success');
+                } catch (error) {
+                    this.showAlert('Error deleting rows: ' + error.message, 'danger');
+                }
+            }
+
+            async deleteRow(id) {
+                if (!confirm('Are you sure you want to delete this row?')) {
+                    return;
+                }
+                
+                try {
+                    // Mock API call - replace with actual implementation
+                    this.tableData = this.tableData.filter(row => row.id !== id);
+                    this.totalRows--;
+                    this.selectedRows.delete(id);
+                    
+                    this.logAction('DELETE', `Deleted row ${id}`);
+                    this.renderTable();
+                    this.updatePagination();
+                    this.showAlert('Row deleted successfully', 'success');
+                } catch (error) {
+                    this.showAlert('Error deleting row: ' + error.message, 'danger');
+                }
+            }
+
+            sortBy(column) {
+                if (this.sortColumn === column) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = column;
+                    this.sortDirection = 'asc';
+                }
+                
+                this.tableData.sort((a, b) => {
+                    const aVal = String(a[column] || '');
+                    const bVal = String(b[column] || '');
+                    
+                    const result = aVal.localeCompare(bVal, undefined, { numeric: true });
+                    return this.sortDirection === 'asc' ? result : -result;
+                });
+                
+                this.renderTable();
+            }
+
+            filterData() {
+                const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+                const dateRange = document.getElementById('dateRange').value;
+                
+                // Apply search filter
+                let filteredData = this.tableData;
+                
+                if (searchTerm) {
+                    filteredData = filteredData.filter(row => {
+                        return Object.values(row).some(value => 
+                            String(value).toLowerCase().includes(searchTerm)
+                        );
+                    });
+                }
+                
+                // Apply date range filter if applicable
+                if (dateRange && this.tableColumns.includes('created_at')) {
+                    const dates = dateRange.split(' to ');
+                    if (dates.length === 2) {
+                        const startDate = new Date(dates[0]);
+                        const endDate = new Date(dates[1]);
+                        
+                        filteredData = filteredData.filter(row => {
+                            const rowDate = new Date(row.created_at);
+                            return rowDate >= startDate && rowDate <= endDate;
+                        });
+                    }
+                }
+                
+                this.tableData = filteredData;
+                this.totalRows = filteredData.length;
+                this.currentPage = 1;
+                this.renderTable();
+                this.updatePagination();
+            }
+
+            goToPage(page) {
+                const totalPages = this.getTotalPages();
+                if (page < 1 || page > totalPages) return;
+                
+                this.currentPage = page;
+                this.renderTable();
+                this.updatePagination();
+            }
+
+            getTotalPages() {
+                return Math.ceil(this.totalRows / this.rowsPerPage);
+            }
+
+            updatePagination() {
+                const totalPages = this.getTotalPages();
+                const startIndex = (this.currentPage - 1) * this.rowsPerPage;
+                const endIndex = Math.min(startIndex + this.rowsPerPage, this.totalRows);
+                
+                document.getElementById('paginationInfo').textContent = 
+                    `Showing ${startIndex + 1} to ${endIndex} of ${this.totalRows} results`;
+                
+                document.getElementById('pageInfo').textContent = 
+                    `Page ${this.currentPage} of ${totalPages}`;
+                
+                document.getElementById('firstPage').disabled = this.currentPage === 1;
+                document.getElementById('prevPage').disabled = this.currentPage === 1;
+                document.getElementById('nextPage').disabled = this.currentPage === totalPages;
+                document.getElementById('lastPage').disabled = this.currentPage === totalPages;
+            }
+
+            populateColumnSelects() {
+                const selects = [
+                    'bulkUpdateColumn', 'bulkDeleteColumn', 'renameColumnSelect', 
+                    'deleteColumnSelect', 'modifyColumnSelect'
+                ];
+                
+                selects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    select.innerHTML = '<option value="">-- Select Column --</option>';
+                    
+                    this.tableColumns.forEach(column => {
+                        const option = document.createElement('option');
+                        option.value = column;
+                        option.textContent = column;
+                        select.appendChild(option);
+                    });
+                });
+            }
+
+            async executeBulkUpdate() {
+                const column = document.getElementById('bulkUpdateColumn').value;
+                const findValue = document.getElementById('bulkFindValue').value;
+                const replaceValue = document.getElementById('bulkReplaceValue').value;
+                
+                if (!column || !findValue) {
+                    this.showAlert('Please fill in all required fields', 'warning');
+                    return;
+                }
+                
+                if (!confirm(`Update all rows where ${column} contains "${findValue}"?`)) {
+                    return;
+                }
+                
+                try {
+                    let updatedCount = 0;
+                    this.tableData.forEach(row => {
+                        if (String(row[column]).includes(findValue)) {
+                            row[column] = replaceValue;
+                            updatedCount++;
+                        }
+                    });
+                    
+                    this.logAction('BULK_UPDATE', `Updated ${updatedCount} rows in ${column}`);
+                    this.renderTable();
+                    this.showAlert(`Updated ${updatedCount} rows successfully`, 'success');
+                } catch (error) {
+                    this.showAlert('Error executing bulk update: ' + error.message, 'danger');
+                }
+            }
+
+            async executeBulkDelete() {
+                const column = document.getElementById('bulkDeleteColumn').value;
+                const value = document.getElementById('bulkDeleteValue').value;
+                const matchType = document.getElementById('bulkDeleteMatch').value;
+                
+                if (!column || !value) {
+                    this.showAlert('Please fill in all required fields', 'warning');
+                    return;
+                }
+                
+                if (!confirm(`Delete all rows where ${column} ${matchType} "${value}"?`)) {
+                    return;
+                }
+                
+                try {
+                    const originalCount = this.tableData.length;
+                    
+                    this.tableData = this.tableData.filter(row => {
+                        const rowValue = String(row[column]);
+                        switch (matchType) {
+                            case 'exact': return rowValue !== value;
+                            case 'contains': return !rowValue.includes(value);
+                            case 'starts': return !rowValue.startsWith(value);
+                            case 'ends': return !rowValue.endsWith(value);
+                            default: return true;
+                        }
+                    });
+                    
+                    const deletedCount = originalCount - this.tableData.length;
+                    this.totalRows = this.tableData.length;
+                    
+                    this.logAction('BULK_DELETE', `Deleted ${deletedCount} rows where ${column} ${matchType} "${value}"`);
+                    this.renderTable();
+                    this.updatePagination();
+                    this.showAlert(`Deleted ${deletedCount} rows successfully`, 'success');
+                } catch (error) {
+                    this.showAlert('Error executing bulk delete: ' + error.message, 'danger');
+                }
+            }
+
+            async executeBulkInsert() {
+                const csvData = document.getElementById('bulkInsertData').value.trim();
+                const hasHeaders = document.getElementById('bulkInsertHeaders').checked;
+                
+                if (!csvData) {
+                    this.showAlert('Please enter CSV data', 'warning');
+                    return;
+                }
+                
+                try {
+                    const lines = csvData.split('\n').filter(line => line.trim());
+                    const headers = hasHeaders ? lines.shift().split(',').map(h => h.trim()) : this.tableColumns;
+                    
+                    let insertedCount = 0;
+                    const maxId = Math.max(...this.tableData.map(row => row.id), 0);
+                    
+                    lines.forEach((line, index) => {
+                        const values = line.split(',').map(v => v.trim());
+                        const newRow = { id: maxId + index + 1 };
+                        
+                        headers.forEach((header, i) => {
+                            newRow[header] = values[i] || '';
+                        });
+                        
+                        this.tableData.push(newRow);
+                        insertedCount++;
+                    });
+                    
+                    this.totalRows = this.tableData.length;
+                    
+                    this.logAction('BULK_INSERT', `Inserted ${insertedCount} new rows`);
+                    this.renderTable();
+                    this.updatePagination();
+                    this.showAlert(`Inserted ${insertedCount} rows successfully`, 'success');
+                    
+                    // Clear the form
+                    document.getElementById('bulkInsertData').value = '';
+                } catch (error) {
+                    this.showAlert('Error executing bulk insert: ' + error.message, 'danger');
+                }
+            }
+
+            async executeCustomSQL() {
+                const sql = document.getElementById('customSQL').value.trim();
+                
+                if (!sql) {
+                    this.showAlert('Please enter a SQL query', 'warning');
+                    return;
+                }
+                
+                if (!confirm('Execute this SQL query? This action cannot be undone.')) {
+                    return;
+                }
+                
+                try {
+                    // Mock SQL execution - replace with actual implementation
+                    this.logAction('SQL_EXECUTE', `Executed custom SQL: ${sql.substring(0, 100)}...`);
+                    this.showAlert('SQL query executed successfully', 'success');
+                } catch (error) {
+                    this.showAlert('Error executing SQL: ' + error.message, 'danger');
+                }
+            }
+
+            switchTab(tabName) {
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Show selected tab content
+                document.getElementById(`tab-${tabName}`).classList.add('active');
+                
+                // Add active class to selected tab
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            }
+
+            exportData() {
+                const format = document.getElementById('exportFormat').value;
+                const includeHeaders = document.getElementById('exportHeaders').checked;
+                const filteredOnly = document.getElementById('exportFiltered').checked;
+                
+                const dataToExport = filteredOnly ? this.getFilteredData() : this.tableData;
+                
+                let content = '';
+                let filename = `${this.currentTable}_export`;
+                let mimeType = 'text/plain';
+                
+                switch (format) {
+                    case 'csv':
+                        content = this.exportToCSV(dataToExport, includeHeaders);
+                        filename += '.csv';
+                        mimeType = 'text/csv';
+                        break;
+                    case 'json':
+                        content = JSON.stringify(dataToExport, null, 2);
+                        filename += '.json';
+                        mimeType = 'application/json';
+                        break;
+                    case 'excel':
+                        // For demo purposes, export as CSV
+                        content = this.exportToCSV(dataToExport, includeHeaders);
+                        filename += '.csv';
+                        mimeType = 'text/csv';
+                        break;
+                    case 'sql':
+                        content = this.exportToSQL(dataToExport);
+                        filename += '.sql';
+                        mimeType = 'text/sql';
+                        break;
+                }
+                
+                this.downloadFile(content, filename, mimeType);
+                this.logAction('EXPORT', `Exported ${dataToExport.length} rows as ${format.toUpperCase()}`);
+                this.showAlert('Data exported successfully', 'success');
+            }
+
+            exportToCSV(data, includeHeaders) {
+                let csv = '';
+                
+                if (includeHeaders) {
+                    csv += this.tableColumns.join(',') + '\n';
+                }
+                
+                data.forEach(row => {
+                    const values = this.tableColumns.map(col => {
+                        const value = row[col] || '';
+                        return `"${String(value).replace(/"/g, '""')}"`;
+                    });
+                    csv += values.join(',') + '\n';
+                });
+                
+                return csv;
+            }
+
+            exportToSQL(data) {
+                let sql = `-- SQL Export for table: ${this.currentTable}\n\n`;
+                
+                data.forEach(row => {
+                    const columns = this.tableColumns.join('`, `');
+                    const values = this.tableColumns.map(col => {
+                        const value = row[col] || '';
+                        return `'${String(value).replace(/'/g, "''")}'`;
+                    }).join(', ');
+                    
+                    sql += `INSERT INTO \`${this.currentTable}\` (\`${columns}\`) VALUES (${values});\n`;
+                });
+                
+                return sql;
+            }
+
+            downloadFile(content, filename, mimeType) {
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            logAction(action, details) {
+                const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+                this.auditLog.unshift({
+                    timestamp,
+                    user: 'admin', // Replace with actual user
+                    action,
+                    table: this.currentTable,
+                    details,
+                    status: 'Success'
+                });
+                
+                // Keep only last 100 entries
+                if (this.auditLog.length > 100) {
+                    this.auditLog = this.auditLog.slice(0, 100);
+                }
+                
+                this.updateAuditLog();
+            }
+
+            updateAuditLog() {
+                const tbody = document.getElementById('auditBody');
+                tbody.innerHTML = '';
+                
+                this.auditLog.forEach(entry => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${entry.timestamp}</td>
+                        <td>${entry.user}</td>
+                        <td>${entry.action}</td>
+                        <td>${entry.table}</td>
+                        <td>${entry.details}</td>
+                        <td><span class="badge badge-success">${entry.status}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type}`;
+                alert.innerHTML = `
+                    ${message}
+                    <button style="float: right; background: none; border: none; font-size: 18px; cursor: pointer;" onclick="this.parentElement.remove()">&times;</button>
+                `;
+                
+                alertContainer.appendChild(alert);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (alert.parentElement) {
+                        alert.remove();
+                    }
+                }, 5000);
+            }
+
+            showLoading(show) {
+                const indicator = document.getElementById('loadingIndicator');
+                if (show) {
+                    indicator.classList.remove('hidden');
+                } else {
+                    indicator.classList.add('hidden');
+                }
+            }
+
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            // Additional methods for column management, filters, etc.
+            addColumn() {
+                const name = document.getElementById('newColumnName').value.trim();
+                const type = document.getElementById('newColumnType').value;
+                const defaultValue = document.getElementById('newColumnDefault').value.trim();
+                
+                if (!name) {
+                    this.showAlert('Please enter a column name', 'warning');
+                    return;
+                }
+                
+                if (this.tableColumns.includes(name)) {
+                    this.showAlert('Column already exists', 'warning');
+                    return;
+                }
+                
+                // Mock implementation
+                this.tableColumns.push(name);
+                this.tableData.forEach(row => {
+                    row[name] = defaultValue || '';
+                });
+                
+                this.populateColumnSelects();
+                this.renderTable();
+                this.logAction('ADD_COLUMN', `Added column: ${name} (${type})`);
+                this.showAlert('Column added successfully', 'success');
+                
+                // Clear form
+                document.getElementById('newColumnName').value = '';
+                document.getElementById('newColumnDefault').value = '';
+            }
+
+            renameColumn() {
+                const oldName = document.getElementById('renameColumnSelect').value;
+                const newName = document.getElementById('renameColumnNew').value.trim();
+                
+                if (!oldName || !newName) {
+                    this.showAlert('Please select a column and enter a new name', 'warning');
+                    return;
+                }
+                
+                if (this.tableColumns.includes(newName)) {
+                    this.showAlert('Column name already exists', 'warning');
+                    return;
+                }
+                
+                // Mock implementation
+                const index = this.tableColumns.indexOf(oldName);
+                this.tableColumns[index] = newName;
+                
+                this.tableData.forEach(row => {
+                    row[newName] = row[oldName];
+                    delete row[oldName];
+                });
+                
+                this.populateColumnSelects();
+                this.renderTable();
+                this.logAction('RENAME_COLUMN', `Renamed column: ${oldName} to ${newName}`);
+                this.showAlert('Column renamed successfully', 'success');
+                
+                // Clear form
+                document.getElementById('renameColumnNew').value = '';
+            }
+
+            deleteColumn() {
+                const columnName = document.getElementById('deleteColumnSelect').value;
+                
+                if (!columnName) {
+                    this.showAlert('Please select a column to delete', 'warning');
+                    return;
+                }
+                
+                if (!confirm(`Are you sure you want to delete column "${columnName}"?`)) {
+                    return;
+                }
+                
+                // Mock implementation
+                this.tableColumns = this.tableColumns.filter(col => col !== columnName);
+                this.tableData.forEach(row => {
+                    delete row[columnName];
+                });
+                
+                this.populateColumnSelects();
+                this.renderTable();
+                this.logAction('DELETE_COLUMN', `Deleted column: ${columnName}`);
+                this.showAlert('Column deleted successfully', 'success');
+            }
+
+            modifyColumn() {
+                const columnName = document.getElementById('modifyColumnSelect').value;
+                const newType = document.getElementById('modifyColumnType').value;
+                
+                if (!columnName || !newType) {
+                    this.showAlert('Please select a column and new type', 'warning');
+                    return;
+                }
+                
+                // Mock implementation
+                this.logAction('MODIFY_COLUMN', `Modified column: ${columnName} to ${newType}`);
+                this.showAlert('Column modified successfully', 'success');
+            }
+        }
+
+        // Initialize the database manager
+        const dbManager = new DatabaseManager();
+    </script>
+</body>
+</html>

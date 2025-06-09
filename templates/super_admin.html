@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Super Admin{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    {% if is_authorized %}
+        <h2 class="mb-4">Super Admin - User Management</h2>
+        <!-- Debug Session Info -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <p><strong>Debug Info:</strong></p>
+                <p>Session Email: {{ session['email'] | default('Not set', true) }}</p>
+                <p>Session Role: {{ session['role'] | default('Not set', true) }}</p>
+            </div>
+        </div>
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <!-- Add User Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Add New User</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('super_admin.super_admin') }}" method="POST">
+                    <input type="hidden" name="action" value="add_user">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email (@megaserve.tech)</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="e.g., user@megaserve.tech" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Security Code</label>
+                        <input type="text" class="form-control" id="code" name="code" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                            <option value="super_admin">Super Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </form>
+            </div>
+        </div>
+        <!-- User List -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Manage Users</h5>
+            </div>
+            <div class="card-body table-container">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Code</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if users %}
+                            {% for user in users %}
+                                <tr>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.role | capitalize }}</td>
+                                    <td>{{ user.code }}</td>
+                                    <td>
+                                        <!-- Update Role Form -->
+                                        <form action="{{ url_for('super_admin.super_admin') }}" method="POST" style="display:inline;">
+                                            <input type="hidden" name="action" value="update_role">
+                                            <input type="hidden" name="email" value="{{ user.email }}">
+                                            <select name="new_role" class="form-select form-select-sm d-inline-block w-auto" required>
+                                                <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                                <option value="super_admin" {% if user.role == 'super_admin' %}selected{% endif %}>Super Admin</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-primary">Update Role</button>
+                                        </form>
+                                        <!-- Delete User Form -->
+                                        <form action="{{ url_for('super_admin.super_admin') }}" method="POST" style="display:inline;">
+                                            <input type="hidden" name="action" value="delete_user">
+                                            <input type="hidden" name="email" value="{{ user.email }}">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete {{ user.email }}?');">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">No users found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-danger" role="alert">
+            Access Denied: You are not authorized to view this page.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

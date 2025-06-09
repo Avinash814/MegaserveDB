@@ -39,7 +39,6 @@
     }
 </style>
 <div class="container">
-    <!-- <h2 class="text-center mb-4">Orderbook</h2> -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="flash-messages mb-4">
@@ -60,10 +59,10 @@
                     <table class="table table-bordered">
                         <tbody>
                             {% for table in tables %}
-                                 <ul class="list-group">
-                                
+                                {% set display_name = 'Orderbook' if table == 'ob' else table %}
+                                <ul class="list-group">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ table }}
+                                        {{ display_name }}
                                         <div class="table-actions">
                                             <a href="{{ url_for('view_table', table=table) }}" class="btn btn-sm btn-primary">View</a>
                                             <!-- <a href="{{ url_for('search_table', table=table) }}" class="btn btn-sm btn-secondary">Search</a> -->
@@ -71,8 +70,7 @@
                                             <!-- <a href="{{ url_for('download_table', table=table) }}" class="btn btn-sm btn-success">Download</a> -->
                                         </div>
                                     </li>
-                                
-                            </ul>
+                                </ul>
                             {% endfor %}
                         </tbody>
                     </table>

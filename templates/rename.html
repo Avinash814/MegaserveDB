@@ -1,283 +1,120 @@
 {% extends 'base.html' %}
 
-{% block title %}Update Data {{ table_name }}{% endblock %}
+{% block title %}Manage Data {{ table_name }}{% endblock %}
 
 {% block content %}
-<!-- Include DataTables and Flatpickr CSS -->
+<!-- Include DataTables, Flatpickr, Axios, Bootstrap, and Font Awesome -->
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<!-- Custom Styles for rename.html -->
+<!-- Custom Styles -->
 <style>
     :root {
         --background: 0 0% 100%;
         --foreground: 222.2 84% 4.9%;
         --card: 0 0% 100%;
-        --card-foreground: 222.2 84% 4.9%;
+        --card-foreground: 222.2 47.4% 11.2%;
         --primary: 222.2 47.4% 11.2%;
         --primary-foreground: 210 40% 98%;
+        --primary-hover: 222.2 47.4% 9%;
         --secondary: 210 40% 96.1%;
         --secondary-foreground: 222.2 47.4% 11.2%;
+        --success: 173 80% 40%;
+        --success-foreground: 210 0% 98%;
+        --warning: 38 92% 50%;
+        --warning-foreground: 222 0% 0%;
+        --danger: 0 84.2% 60.2%;
+        --danger-foreground: 210 40% 98%;
         --muted: 210 40% 96.1%;
         --muted-foreground: 215.4 16.3% 46.9%;
         --accent: 210 40% 96.1%;
         --accent-foreground: 222.2 47.4% 11.2%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 210 40% 98%;
         --border: 214.3 31.8% 91.4%;
         --input: 214.3 31.8% 91.4%;
         --ring: 222.2 84% 4.9%;
         --radius: 0.5rem;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
+        --shadow: 0 2px 5px rgba(0,0,0,0.05);
+        --shadow-lg: 0 4px 10px rgba(0,0,0,0.1);
     }
 
-    .table-container {
-        overflow-x: auto;
-        overflow-y: auto;
-        max-height: 85vh;
-        background-color: hsl(var(--card));
-        border-radius: var(--radius);
-        border: 1px solid hsl(var(--border));
-        margin-bottom: 1rem;
-    }
-
-    #data-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    #data-table th, #data-table td {
-        font-size: 0.85rem;
-        padding: 0.5rem;
-        vertical-align: middle;
-        line-height: 1.2;
-        border: 1px solid hsl(var(--border));
-        text-align: center;
-    }
-
-    #data-table th {
-        background-color: hsl(var(--secondary));
-        color: hsl(var(--secondary-foreground));
-        position: sticky;
-        top: 0;
-        z-index: 20;
-    }
-
-    #data-table td {
-        color: hsl(var(--card-foreground));
-    }
-
-    #data-table input[type="checkbox"] {
-        visibility: visible;
-        width: 16px;
-        height: 16px;
-        margin: 0 auto;
-        display: block;
-    }
-
-    .dt-checkboxes {
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    .filter-form {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-end;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        padding: 1rem;
-        background-color: hsl(var(--card));
-        border-radius: var(--radius);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    .filter-form > div {
-        flex-grow: 1;
-        min-width: 200px;
-    }
-
-    #main-search-input {
-        height: 2.25rem;
-        border-radius: var(--radius);
-        border: 1px solid hsl(var(--input));
-        padding: 0.25rem 0.75rem;
-        font-size: 0.875rem;
-        width: 100%;
-    }
-
-    #main-search-input:focus-visible {
-        outline: 1px solid hsl(var(--ring));
-        outline-offset: 2px;
-    }
-
-    .flatpickr-input {
-        width: 100%;
-        font-size: 0.875rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: var(--radius);
-        border: 1px solid hsl(var(--input));
-    }
-
-    .rename-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-
-    .rename-column-section, .rename-data-section {
-        background-color: hsl(var(--card));
-        border: 1px solid hsl(var(--border));
-        border-radius: var(--radius);
-        padding: 1rem;
-    }
-
-    .card-title {
-        font-size: 1.25rem;
-        color: hsl(var(--foreground));
-        margin-bottom: 1rem;
-    }
-
-    .flash-messages {
-        margin-bottom: 1.5rem;
-    }
-
-    .alert {
-        padding: 1rem;
-        border-radius: var(--radius);
-        border: 1px solid hsl(var(--border));
-    }
-
-    .alert-success {
-        background-color: hsl(var(--chart-4) / 0.2);
-        color: hsl(var(--chart-4));
-    }
-
-    .alert-danger {
-        background-color: hsl(var(--destructive) / 0.2);
-        color: hsl(var(--destructive));
-    }
-
-    .btn-close {
-        background: none;
-        border: none;
-        font-size: 0.9rem;
-        cursor: pointer;
-        color: hsl(var(--muted-foreground));
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-    }
-
-    .bottom-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-
-    .pagination-controls {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    #rows-per-page {
-        font-size: 0.9rem;
-        padding: 0.5rem;
-        border: 1px solid hsl(var(--input));
-        border-radius: var(--radius);
-        cursor: pointer;
-    }
-
-    #select_all_rows {
-        width: 16px;
-        height: 16px;
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background-color: hsl(var(--card));
-        border: 2px solid hsl(var(--primary));
-        border-radius: 4px;
-        transition: background-color 0.2s, border-color 0.2s;
-        cursor: pointer;
-    }
-
-    #select_all_rows:checked {
-        background-color: hsl(var(--primary));
-        border-color: hsl(var(--primary));
-    }
-
-    #select_all_rows:checked::before {
-        content: "✔";
-        color: hsl(var(--primary-foreground));
-        font-size: 12px;
-        line-height: 1;
-    }
-
-    #select_all_rows:focus-visible {
-        outline: 2px solid hsl(var(--ring));
-        outline-offset: 2px;
-    }
-
-    #select_all_rows:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .custom-alert {
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 1rem;
-        border-radius: var(--radius);
-        background-color: hsl(var(--destructive) / 0.9);
-        color: hsl(var(--destructive-foreground));
-        z-index: 10000;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        font-size: 0.9rem;
-        text-align: center;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .btn-destructive {
-        background-color: hsl(var(--destructive));
-        color: hsl(var(--destructive-foreground));
-        border: 1px solid hsl(var(--destructive) / 0.8);
-        transition: background-color 0.2s, border-color 0.2s;
-    }
-
-    .btn-destructive:hover {
-        background-color: hsl(var(--destructive) / 0.9);
-        border-color: hsl(var(--destructive) / 0.7);
-    }
-
-    .btn-destructive:focus-visible {
-        outline: 2px solid hsl(var(--ring));
-        outline-offset: 2px;
+    .container-fluid { padding: 1.5rem; background: hsl(var(--background)); }
+    .header { background: hsl(var(--card)); border-radius: var(--radius); padding: 1rem 1.5rem 1rem 1.5rem; margin-bottom: 1rem; box-shadow: var(--shadow-lg); text-align: center; }
+    .header h1 { font-size: 2rem; color: hsl(var(--foreground)); margin-bottom: 0.5rem; }
+    .header p { color: hsl(var(--muted-foreground)); font-size: 1rem; }
+    .card { background: hsl(var(--card)); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid hsl(var(--border)); }
+    .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid hsl(var(--border)); }
+    .card-title { font-size: 1.25rem; font-weight: 600; color: hsl(var(--foreground)); }
+    .tabs { display: flex; background: hsl(var(--secondary)); border-radius: var(--radius); padding: 0.25rem; margin-bottom: 1.5rem; overflow-x: auto; }
+    .tab { flex: 1; min-width: 120px; padding: 0.75rem 1rem; text-align: center; background: transparent; border: none; border-radius: calc(var(--radius) - 0.1rem); cursor: pointer; transition: all 0.3s ease; font-weight: 500; color: hsl(var(--secondary-foreground)); display: flex; align-items: center; justify-content: center; gap: 0.5rem; pointer-events: auto; }
+    .tab.active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); box-shadow: var(--shadow); }
+    .tab:hover:not(.active) { background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: hsl(var(--foreground)); }
+    .form-control { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid hsl(var(--input)); border-radius: var(--radius); font-size: 0.875rem; transition: all 0.3s ease; background: hsl(var(--card)); }
+    .form-control:focus { outline: none; border-color: hsl(var(--primary)); box-shadow: 0 0 0 2px hsl(var(--primary) / 0.1); }
+    .btn { padding: 0.5rem 1rem; border: none; border-radius: var(--radius); font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+    .btn-primary:hover { background: hsl(var(--primary-hover)); }
+    .btn-success { background: hsl(var(--success)); color: hsl(var(--success-foreground)); }
+    .btn-warning { background: hsl(var(--warning)); color: hsl(var(--warning-foreground)); }
+    .btn-danger { background: hsl(var(--danger)); color: hsl(var(--danger-foreground)); }
+    .btn-secondary { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); }
+    .btn-outline { background: transparent; border: 1px solid hsl(var(--primary)); color: hsl(var(--primary)); }
+    .btn-outline:hover { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .table-container { overflow-x: auto; max-height: 75vh; border-radius: var(--radius); border: 1px solid hsl(var(--border)); background: hsl(var(--card)); }
+    .table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .table th, .table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid hsl(var(--border)); }
+    .table th { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); position: sticky; top: 0; z-index: 10; }
+    .table tbody tr:hover { background: hsl(var(--primary) / 0.05); }
+    .table tbody tr.selected { background: hsl(var(--primary) / 0.1); }
+    .editable-cell { cursor: pointer; }
+    .editable-cell:hover { background: hsl(var(--primary) / 0.1); }
+    .search-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    .search-input { position: relative; }
+    .search-input i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: hsl(var(--muted-foreground)); }
+    .search-input input { padding-left: 2.5rem; }
+    .badge { display: inline-block; padding: 0.25rem 0.5rem; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-radius: 0.375rem; font-size: 0.75rem; font-weight: 500; }
+    .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 1rem; }
+    .pagination-info { color: hsl(var(--muted-foreground)); font-size: 0.875rem; }
+    .pagination-controls { display: flex; gap: 0.5rem; }
+    .bulk-operations { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+    .operation-card { border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 1rem; transition: all 0.3s ease; }
+    .operation-card:hover { border-color: hsl(var(--primary)); box-shadow: var(--shadow); }
+    .alert { padding: 1rem; border-radius: var(--radius); border-left: 4px solid; margin-bottom: 1rem; }
+    .alert-success { background: hsl(var(--success) / 0.1); border-color: hsl(var(--success)); color: hsl(var(--success)); }
+    .alert-warning { background: hsl(var(--warning) / 0.1); border-color: hsl(var(--warning)); color: hsl(var(--warning)); }
+    .alert-danger { background: hsl(var(--danger) / 0.1); border-color: hsl(var(--danger)); color: hsl(var(--danger)); }
+    .loading { display: flex; align-items: center; justify-content: center; padding: 2rem; color: hsl(var(--muted-foreground)); }
+    .loading i { animation: spin 1s linear infinite; margin-right: 0.5rem; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .hidden { display: none; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-2 { gap: 0.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    @media (max-width: 768px) {
+        .tabs { flex-direction: column; }
+        .search-filters { grid-template-columns: 1fr; }
+        .pagination { flex-direction: column; }
     }
 </style>
 
 <div class="container-fluid">
-    <h1 class="text-center mb-4">Update Data: {{ table_name }}</h1>
+    <!-- Header -->
+    <div class="header">
+        <h4><i class="fas fa-database"></i> Manage Database</h4>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="flash-messages mb-4">
+            <div class="flash-messages mb-6">
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else category }}">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -286,463 +123,1063 @@
         {% endif %}
     {% endwith %}
 
-    <form method="GET" id="filterForm" action="{{ url_for('rename_data', table=table_name) }}" class="filter-form mb-3">
-        <div class="main-search">
-            <label for="main-search-input" class="form-label visually-hidden">Search</label>
-            <input type="text" id="main-search-input" class="form-control" name="search_query" value="{{ search_query or '' }}" placeholder="Search...">
-        </div>
-        <!-- <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-white shadow-sm hover:bg-gray-100 hover:text-gray-800 h-8 w-8 rounded-md text-xs border-0" aria-label="Toggle columns" type="button" data-bs-toggle="modal" data-bs-target="#columnToggleModal">
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-4">
-                        <path d="M5.5 3C4.67157 3 4 3.67157 4 4.5C4 5.32843 4.67157 6 5.5 6C6.32843 6 7 5.32843 7 4.5C7 3.67157 6.32843 3 5.5 3ZM3 5C3.01671 5 3.03323 4.99918 3.04952 4.99758C3.28022 6.1399 4.28967 7 5.5 7C6.71033 7 7.71978 6.1399 7.95048 4.99758C7.96677 4.99918 7.98329 5 8 5H13.5C13.7761 5 14 4.77614 14 4.5C14 4.22386 13.7761 4 13.5 4H8C7.98329 4 7.96677 4.00082 7.95048 4.00242C7.71978 2.86009 6.71033 2 5.5 2C4.28967 2 3.28022 2.86009 3.04952 4.00242C3.03323 4.00082 3.01671 4 3 4H1.5C1.22386 4 1 4.22386 1 4.5C1 4.77614 1.22386 5 1.5 5H3ZM11.9505 10.9976C11.7198 12.1399 10.7103 13 9.5 13C8.28967 13 7.28022 12.1399 7.04952 10.9976C7.03323 10.9992 7.01671 11 7 11H1.5C1.22386 11 1 10.7761 1 10.5C1 10.2239 1.22386 10 1.5 10H7C7.01671 10 7.03323 10.0008 7.04952 10.0024C7.28022 8.8601 8.28967 8 9.5 8C10.7103 8 11.7198 8.8601 11.9505 10.0024C11.9668 10.0008 11.9833 10 12 10H13.5C13.7761 10 14 10.2239 14 10.5C14 10.7761 13.7761 11 13.5 11H12C11.9833 11 11.9668 10.9992 11.9505 10.9976ZM8 10.5C8 9.67157 8.67157 9 9.5 9C10.3284 9 11 9.67157 11 10.5C11 11.3284 10.3284 12 9.5 12C8.67157 12 8 11.3284 8 10.5Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
-                    </svg>
-                </button> -->
-        <div style="min-width: 220px;">
-            <label for="date_range" class="form-label visually-hidden">Date Range</label>
-            <input type="text" id="date_range" class="form-control flatpickr-input" placeholder="Select date range...">
-            <input type="hidden" name="from_date" id="from_date" value="{{ from_date or '' }}">
-            <input type="hidden" name="to_date" id="to_date" value="{{ to_date or '' }}">
-        </div>
-    </form>
-
-    <div class="table-container">
-        <form method="POST" action="{{ url_for('rename_data', table=table_name) }}" id="deleteForm">
-            <input type="hidden" id="total-rows" value="{{ total_rows }}">
-            <div class="mb-3 d-flex justify-content-end">
-                <button type="submit" name="delete_rows" class="btn btn-destructive me-2">Delete Selected Rows</button>
-                <!-- <button type="submit" name="delete_columns" class="btn btn-destructive me-2">Delete Selected Columns</button> -->
-            </div>
-            <table id="data-table" class="table table-striped table-bordered">
-                <thead>
-                    <tr>
-                        <th>
-                            <input type="checkbox" id="select_all_rows" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="Select all rows">
-                        </th>
-                        {% for column in columns %}
-                            <th>
-                                {% if column != 'row_id' and column != 'id' %}
-                                    <input type="checkbox" name="columns_to_delete" value="{{ column }}">
-                                {% endif %}
-                                {{ column }}
-                            </th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in data %}
-                        <tr>
-                            <td>
-                                <input type="checkbox" name="rows_to_delete" value="{{ row['id'] if table_name.lower() == 'upload_log' else row['row_id'] if 'row_id' in row else '' }}">
-                            </td>
-                            {% for column in columns %}
-                                <td>{{ row[column] if column in row else '' }}</td>
-                            {% endfor %}
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="{{ columns|length + 1 }}" class="text-center">No data available for the selected filters.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Table Selection -->
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('manage_database') }}">
         </form>
     </div>
 
-    <div class="bottom-controls">
-        <div class="action-buttons">
-            <!-- <button class="btn btn-primary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#renameColumnCard" aria-expanded="false" aria-controls="renameColumnCard">
-                Rename Column
-            </button> -->
-            <button class="btn btn-primary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#updateDataCard" aria-expanded="false" aria-controls="updateDataCard">
-                Update Data in Column
-            </button>
-        </div>
-        <div class="pagination-controls">
-            <form method="GET" action="{{ url_for('rename_data', table=table_name) }}" id="perPageForm" class="d-inline-block me-3">
-                <input type="hidden" name="search_query" value="{{ search_query or '' }}">
-                <input type="hidden" name="from_date" value="{{ from_date or '' }}">
-                <input type="hidden" name="to_date" value="{{ to_date or '' }}">
-                <label for="rows-per-page" class="visually-hidden">Rows per page:</label>
-                <select id="rows-per-page" class="form-select form-select-sm d-inline-block" name="per_page" style="width:auto;" onchange="this.form.submit()">
-                    <option value="500" {% if per_page == 500 %}selected{% endif %}>500</option>
-                    <option value="1000" {% if per_page == 1000 %}selected{% endif %}>1000</option>
-                    <option value="1500" {% if per_page == 1500 %}selected{% endif %}>1500</option>
-                    <option value="3000" {% if per_page == 3000 %}selected{% endif %}>3000</option>
-                </select>
-                <span class="ms-1">rows/page</span>
+    {% if table_name %}
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" data-tab="data"><i class="fas fa-table"></i> Data View</button>
+        <button class="tab" data-tab="bulk"><i class="fas fa-edit"></i> Bulk Operations</button>
+        <button class="tab" data-tab="filters"><i class="fas fa-filter"></i> Advanced Filters</button>
+        <button class="tab" data-tab="columns"><i class="fas fa-columns"></i> Column Manager</button>
+        <button class="tab" data-tab="export"><i class="fas fa-file-export"></i> Export Data</button>
+    </div>
+
+    <!-- Tab Contents -->
+    <div id="tab-data" class="tab-content active">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-table"></i>
+                <span class="card-title">Table Data: {{ table_name }}</span>
+            </div>
+
+            <!-- Search and Filters -->
+            <form method="GET" id="filterForm" action="{{ url_for('manage_database', table=table_name) }}" class="search-filters">
+                <div class="search-input">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="globalSearch" class="form-control" name="search_query" value="{{ search_query or '' }}" placeholder="Search all columns...">
+                </div>
+                <div>
+                    <input type="text" id="date_range" class="form-control flatpickr-input" placeholder="Select date range...">
+                    <input type="hidden" name="from_date" id="from_date" value="{{ from_date or '' }}">
+                    <input type="hidden" name="to_date" id="to_date" value="{{ to_date or '' }}">
+                </div>
+                <div>
+                    <select id="rowsPerPage" class="form-control" name="per_page">
+                        <option value="500" {% if per_page == 500 %}selected{% endif %}>500 rows</option>
+                        <option value="1000" {% if per_page == 1000 %}selected{% endif %}>1000 rows</option>
+                        <option value="1500" {% if per_page == 1500 %}selected{% endif %}>1500 rows</option>
+                        <option value="3000" {% if per_page == 3000 %}selected{% endif %}>3000 rows</option>
+                    </select>
+                </div>
+                <div>
+                    <!-- Inside the search-filters or selectedActions div -->
+                    <button type="button" id="undoChanges" class="btn btn-warning"><i class="fas fa-undo"></i> Undo</button>
+                    
+                    <button type="button" id="refreshData" class="btn btn-primary"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    
+                </div>
             </form>
-            <span>Page {{ page }} of {{ total_pages }}</span>
-            <div class="ms-2">
-                <a href="{{ url_for('rename_data', table=table_name, page=1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="{% if page <= 1 %}disabled{% endif %} btn btn-outline-primary btn-sm"><<</a>
-                <a href="{{ url_for('rename_data', table=table_name, page=page-1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="{% if page <= 1 %}disabled{% endif %} btn btn-outline-primary btn-sm"><</a>
-                <a href="{{ url_for('rename_data', table=table_name, page=page+1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="{% if page >= total_pages %}disabled{% endif %} btn btn-outline-primary btn-sm">></a>
-                <a href="{{ url_for('rename_data', table=table_name, page=total_pages, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="{% if page >= total_pages %}disabled{% endif %} btn btn-outline-primary btn-sm">>></a>
+            
+             
+            <!-- Selected Rows Actions -->
+            <div id="selectedActions" class="hidden mb-4">
+                <div class="flex items-center gap-2">
+                    <span id="selectedCount" class="badge"></span>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}" id="deleteSelectedForm" style="display:inline;">
+                        <input type="hidden" name="action" value="delete_rows">
+                        <input type="hidden" id="selectedRowsInput" name="rows_to_delete">
+                        <button type="submit" id="deleteSelected" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Selected</button>
+                    </form>
+                    <button id="exportSelected" class="btn btn-secondary"><i class="fas fa-download"></i> Export Selected</button>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-container">
+                <table id="dataTable" class="table">
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <div class="pagination-info">
+                    <span id="paginationInfo">Showing {{ (page - 1) * per_page + 1 }} to {% if page * per_page < total_rows|default(0) %}{{ page * per_page }}{% else %}{{ total_rows|default(0) }}{% endif %} of {{ total_rows|default(0) }} results</span>
+                </div>
+                <div class="pagination-controls">
+                    <a href="{{ url_for('manage_database', table=table_name, page=1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="btn btn-outline {% if page <= 1 %}disabled{% endif %}"><i class="fas fa-angle-double-left"></i></a>
+                    <a href="{{ url_for('manage_database', table=table_name, page=page-1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="btn btn-outline {% if page <= 1 %}disabled{% endif %}"><i class="fas fa-angle-left"></i></a>
+                    <span id="pageInfo" class="badge">Page {{ page }} of {{ total_pages }}</span>
+                    <a href="{{ url_for('manage_database', table=table_name, page=page+1, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="btn btn-outline {% if page >= total_pages %}disabled{% endif %}"><i class="fas fa-angle-right"></i></a>
+                    <a href="{{ url_for('manage_database', table=table_name, page=total_pages, per_page=per_page, search_query=search_query, from_date=from_date, to_date=to_date) }}" class="btn btn-outline {% if page >= total_pages %}disabled{% endif %}"><i class="fas fa-angle-double-right"></i></a>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="rename-container">
-        <div class="rename-column-section collapse" id="renameColumnCard">
+    <!-- Bulk Operations Tab -->
+    <div id="tab-bulk" class="tab-content">
+        <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Rename Column</h5>
+                <i class="fas fa-edit"></i>
+                <span class="card-title">Bulk Operations</span>
             </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('rename_data', table=table_name) }}">
-                    <div class="mb-3">
-                        <label for="old_column" class="form-label">Select Column to Rename</label>
-                        <select class="form-select" id="old_column" name="old_column" required>
-                            <option value="">-- Select a Column --</option>
-                            {% for column in columns %}
-                                <option value="{{ column }}">{{ column }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="new_column" class="form-label">New Column Name</label>
-                        <input type="text" class="form-control" id="new_column" name="new_column" placeholder="Enter new column name" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Rename Column</button>
-                </form>
-            </div>
-        </div>
-
-        <div class="rename-data-section collapse" id="updateDataCard">
-            <div class="card-header">
-                <h5 class="card-title">Update Data in Column</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('rename_data', table=table_name) }}">
-                    <div class="mb-3">
-                        <label for="column" class="form-label">Select Column</label>
-                        <select class="form-select" id="column" name="column" required>
-                            <option value="">-- Select a Column --</option>
-                            {% for column in columns %}
-                                <option value="{{ column }}">{{ column }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="row_id" class="form-label">{{ 'id' if table_name.lower() == 'upload_log' else 'row_id' }}</label>
-                        <input type="text" class="form-control" id="row_id" name="row_id" placeholder="Enter {{ 'id' if table_name.lower() == 'upload_log' else 'row_id' }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="old_data" class="form-label">Old Data Value</label>
-                        <input type="text" class="form-control" id="old_data" name="old_data" placeholder="Enter old data value" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="new_data" class="form-label">New Data Value</label>
-                        <input type="text" class="form-control" id="new_data" name="new_data" placeholder="Enter new data value" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Update Data</button>
-                </form>
+            <div class="bulk-operations">
+                <!-- Bulk Update -->
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-edit"></i> Bulk Update</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}">
+                        <input type="hidden" name="bulk_update" value="true">
+                        <div class="form-group">
+                            <label class="form-label">Date Range:</label>
+                            <input type="text" id="bulkUpdateDateRange" name="date_range" class="form-control flatpickr-input" placeholder="Select date range...">
+                            <input type="hidden" name="update_from_date" id="bulkUpdateFromDate">
+                            <input type="hidden" name="update_to_date" id="bulkUpdateToDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Target Column:</label>
+                            <select id="bulkUpdateColumn" name="column" class="form-control">
+                                <option value="">-- Select Column --</option>
+                                {% for column in columns %}
+                                    <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Find Value:</label>
+                            <input type="text" id="bulkFindValue" name="old_data" class="form-control" placeholder="Value to find">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Replace With:</label>
+                            <input type="text" id="bulkReplaceValue" name="new_data" class="form-control" placeholder="New value">
+                        </div>
+                        <button type="submit" id="executeBulkUpdate" class="btn btn-primary"><i class="fas fa-save"></i> Execute Update</button>
+                    </form>
+                </div>
+                <!-- Bulk Delete -->
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-trash"></i> Bulk Delete</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}">
+                        <input type="hidden" name="bulk_delete" value="true">
+                        <div class="form-group">
+                            <label class="form-label">Date Range:</label>
+                            <input type="text" id="bulkDeleteDateRange" name="date_range" class="form-control flatpickr-input" placeholder="Select date range...">
+                            <input type="hidden" name="delete_from_date" id="bulkDeleteFromDate">
+                            <input type="hidden" name="delete_to_date" id="bulkDeleteToDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Target Column:</label>
+                            <select id="bulkDeleteColumn" name="column" class="form-control">
+                                <option value="">-- Select Column --</option>
+                                {% for column in columns %}
+                                    <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Value to Match:</label>
+                            <input type="text" id="bulkDeleteValue" name="value" class="form-control" placeholder="Value to delete">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Match Type:</label>
+                            <select id="bulkDeleteMatch" name="match_type" class="form-control">
+                                <option value="exact">Exact Match</option>
+                                <option value="contains">Contains</option>
+                                <option value="starts">Starts With</option>
+                                <option value="ends">Ends With</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="executeBulkDelete" class="btn btn-danger"><i class="fas fa-trash"></i> Execute Delete</button>
+                    </form>
+                </div>
+                <!-- Bulk Insert
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-plus"></i> Bulk Insert</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}">
+                        <input type="hidden" name="bulk_insert" value="true">
+                        <div class="form-group">
+                            <label class="form-label">Date Range:</label>
+                            <input type="text" id="bulkInsertDateRange" name="date_range" class="form-control flatpickr-input" placeholder="Select date range...">
+                            <input type="hidden" name="insert_from_date" id="bulkInsertFromDate">
+                            <input type="hidden" name="insert_to_date" id="bulkInsertToDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CSV Data:</label>
+                            <textarea id="bulkInsertData" name="csv_data" class="form-control" rows="6" placeholder="Paste CSV data here..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="bulkInsertHeaders" name="has_headers"> First row contains headers
+                            </label>
+                        </div>
+                        <button type="submit" id="executeBulkInsert" class="btn btn-success"><i class="fas fa-plus"></i> Execute Insert</button>
+                    </form>
+                </div> -->
+                <!-- Server Data Delete -->
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-server"></i> Server Data Delete</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}">
+                        <input type="hidden" name="server_delete" value="true">
+                        <div class="form-group">
+                            <label class="form-label">Select Date:</label>
+                            <input type="text" id="serverDeleteDate" name="server_date" class="form-control flatpickr-input" placeholder="Select date...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Select Server:</label>
+                            <select id="serverDeleteSelect" name="server" class="form-control">
+                                <option value="">-- Select Server --</option>
+                                <!-- Servers will be populated dynamically -->
+                            </select>
+                        </div>
+                        <button type="submit" id="executeServerDelete" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Server Data</button>
+                        <button type="button" id="undoServerDelete" class="btn btn-warning mt-2"><i class="fas fa-undo"></i> Undo Delete</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
-<!-- Include DataTables and Flatpickr JS -->
+    <!-- Advanced Filters Tab -->
+    <div id="tab-filters" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-filter"></i>
+                <span class="card-title">Advanced Filters</span>
+            </div>
+            <div id="filterContainer">
+                <div class="mb-4">
+                    <button type="button" id="addFilter" class="btn btn-primary"><i class="fas fa-plus"></i> Add Filter</button>
+                    <button type="button" id="clearFilters" class="btn btn-secondary"><i class="fas fa-times"></i> Clear All</button>
+                    <button type="button" id="applyFilters" class="btn btn-success"><i class="fas fa-check"></i> Apply Filters</button>
+                </div>
+                <div id="filterList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column Manager Tab -->
+    <div id="tab-columns" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-columns"></i>
+                <span class="card-title">Column Manager</span>
+            </div>
+            <div class="bulk-operations">
+                <!-- Add Column -->
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-plus"></i> Add Column</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}">
+                        <input type="hidden" name="add_column" value="true">
+                        <div class="form-group">
+                            <label class="form-label">Column Name:</label>
+                            <input type="text" id="newColumnName" name="column_name" class="form-control" placeholder="Column name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data Type:</label>
+                            <select id="newColumnType" name="data_type" class="form-control">
+                                <option value="VARCHAR(255)">Text (VARCHAR)</option>
+                                <option value="INT">Integer</option>
+                                <option value="DECIMAL(10,2)">Decimal</option>
+                                <option value="DATE">Date</option>
+                                <option value="DATETIME">DateTime</option>
+                                <option value="TEXT">Long Text</option>
+                                <option value="BOOLEAN">Boolean</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Default Value:</label>
+                            <input type="text" id="newColumnDefault" name="default_value" class="form-control" placeholder="Default value (optional)">
+                        </div>
+                        <button type="submit" id="addColumn" class="btn btn-primary"><i class="fas fa-plus"></i> Add Column</button>
+                    </form>
+                </div>
+                <!-- Rename Column -->
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-edit"></i> Rename Column</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}">
+                        <input type="hidden" name="action" value="rename_column">
+                        <div class="form-group">
+                            <label class="form-label">Select Column:</label>
+                            <select id="renameColumnSelect" name="old_column" class="form-control">
+                                <option value="">-- Select Column --</option>
+                                {% for column in columns %}
+                                    <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">New Name:</label>
+                            <input type="text" id="renameColumnNew" name="new_column" class="form-control" placeholder="New column name">
+                        </div>
+                        <button type="submit" id="renameColumn" class="btn btn-primary"><i class="fas fa-edit"></i> Rename Column</button>
+                    </form>
+                </div>
+                <!-- Delete Column -->
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-trash"></i> Delete Column</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}">
+                        <input type="hidden" name="action" value="delete_columns">
+                        <div class="form-group">
+                            <label class="form-label">Select Column:</label>
+                            <select id="deleteColumnSelect" name="columns_to_delete" class="form-control">
+                                <option value="">-- Select Column --</option>
+                                {% for column in columns %}
+                                    {% if column != primary_key %}
+                                        <option value="{{ column }}">{{ column }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" id="deleteColumn" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Column</button>
+                    </form>
+                </div>
+                <!-- Modify Column -->
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-cog"></i> Modify Column</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}">
+                        <input type="hidden" name="modify_column" value="true">
+                        <div class="form-group">
+                            <label class="form-label">Select Column:</label>
+                            <select id="modifyColumnSelect" name="column" class="form-control">
+                                <option value="">-- Select Column --</option>
+                                {% for column in columns %}
+                                    <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">New Data Type:</label>
+                            <select id="modifyColumnType" name="data_type" class="form-control">
+                                <option value="VARCHAR(255)">Text (VARCHAR)</option>
+                                <option value="INT">Integer</option>
+                                <option value="DECIMAL(10,2)">Decimal</option>
+                                <option value="DATE">Date</option>
+                                <option value="DATETIME">DateTime</option>
+                                <option value="TEXT">Long Text</option>
+                                <option value="BOOLEAN">Boolean</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="modifyColumn" class="btn btn-warning"><i class="fas fa-cog"></i> Modify Column</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export/Import Tab -->
+    <div id="tab-export" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-file-export"></i>
+                <span class="card-title">Data Export</span>
+            </div>
+            <div class="bulk-operations">
+                <!-- Export Data -->
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-download"></i> Export Data</h3>
+                    <form id="exportForm">
+                        <div class="form-group">
+                            <label class="form-label">Export Format:</label>
+                            <select id="exportFormat" class="form-control">
+                                <option value="csv">CSV</option>
+                                <option value="excel">Excel</option>
+                                <option value="sql">SQL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="exportHeaders" checked> Include headers
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="exportFiltered"> Export filtered data
+                            </label>
+                        </div>
+                        <button type="button" id="exportData" class="btn btn-success"><i class="fas fa-download"></i> Export</button>
+                    </form>
+                </div>
+                <!-- Import Data
+                <div class="operation-card">
+                    <h3 class="mb-4"><i class="fas fa-upload"></i> Import Data</h3>
+                    <form method="POST" action="{{ url_for('manage_database', table=table_name) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="import_data" value="true">
+                        <div class="form-group">
+                            <label class="form-label">Select File:</label>
+                            <input type="file" id="importInput" name="file" class="form-control" accept=".csv,.xlsx">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Import Mode:</label>
+                            <select id="importMode" name="import_mode" class="form-control">
+                                <option value="append">Append</option>
+                                <option value="replace">Replace</option>
+                                <option value="update">Update</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="importData" class="btn btn-primary"><i class="fas fa-upload"></i> Import</button>
+                    </form>
+                </div> -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="hidden">
+        <div class="loading">
+            <i class="fas fa-spinner"></i> Loading...
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
+    {% else %}
+    <div class="alert alert-warning">
+        <p>No table selected. Please choose a table from the dropdown above.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Auto-close sidebar on page load
-    document.addEventListener('DOMContentLoaded', function () {
-        document.body.classList.add('toggled');
-    });
+class DatabaseManager {
+    constructor() {
+        this.tableName = "{{ table_name | default('') | e }}";
+        this.primaryKey = "{{ primary_key | default('id') | e }}";
+        this.currentPage = {{ page | default(1) }};
+        this.rowsPerPage = {{ per_page | default(1000) }};
+        this.totalRows = {{ total_rows | default(0) }};
+        this.totalPages = {{ total_pages | default(1) }};
+        this.searchQuery = "{{ search_query | default('') | e }}";
+        this.fromDate = "{{ from_date | default('') | e }}";
+        this.toDate = "{{ to_date | default('') | e }}";
+        this.columns = {{ columns | tojson | safe }};
+        this.data = {{ data | tojson | safe }};
+        this.selectedRows = new Set();
+        this.sortColumn = '';
+        this.sortDirection = 'asc';
+        this.filters = [];
+        this.editHistory = [];
+        this.serverDeleteHistory = [];
 
-    $(document).ready(function() {
         try {
-            console.log("Initializing rename.html script...");
+            this.init();
+        } catch (error) {
+            console.error('Initialization error:', error);
+            this.showAlert('Failed to initialize database manager.', 'danger');
+        }
+    }
 
-            // --- Debug Raw JSON Strings ---
-            const rawColumnsJson = '{{ columns | tojson | safe }}';
-            const rawDataJson = '{{ data | tojson | safe }}';
-            console.log('Raw Columns JSON:', rawColumnsJson);
-            console.log('Raw Data JSON:', rawDataJson);
+    init() {
+        this.bindEvents();
+        this.initDatePickers();
+        this.renderTable();
+        this.updatePagination();
+        this.populateServerList();
+    }
 
-            // --- Parse JSON with Robust Handling ---
-            let columns = [];
-            let data = [];
-            try {
-                columns = JSON.parse(rawColumnsJson) || [];
-                data = JSON.parse(rawDataJson) || [];
-                console.log('Parsed Columns:', columns);
-                console.log('Parsed Data:', data);
-            } catch (e) {
-                console.error('Error parsing server-side data:', e.message);
-                columns = [];
-                data = [];
-            }
+    bindEvents() {
+        console.log('Binding events');
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+        });
 
-            // --- Variable Definitions ---
-            const tableName = "{{ table_name | default('unknown') | e }}";
-            const currentSearchQuery = "{{ search_query | default('') | e }}";
-            const currentFromDate = "{{ from_date | default('') | e }}";
-            const currentToDate = "{{ to_date | default('') | e }}";
-            const primaryKey = "{{ 'id' if table_name.lower() == 'upload_log' else 'row_id' }}";
-            console.log("Variables:", { tableName, currentSearchQuery, currentFromDate, currentToDate, primaryKey });
+        const searchInput = document.getElementById('globalSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', this.debounce(() => {
+                this.searchQuery = searchInput.value;
+                this.currentPage = 1;
+                this.loadTableData();
+            }, 500));
+        }
 
-            // --- Flatpickr Initialization ---
-            const fp = flatpickr("#date_range", {
+        const rowsPerPageSelect = document.getElementById('rowsPerPage');
+        if (rowsPerPageSelect) {
+            rowsPerPageSelect.addEventListener('change', (e) => {
+                this.rowsPerPage = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadTableData();
+            });
+        }
+
+        const refreshButton = document.getElementById('refreshData');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => this.loadTableData());
+        }
+
+        const undoButton = document.getElementById('undoChanges');
+        if (undoButton) {
+            undoButton.addEventListener('click', () => this.undoChange());
+        }
+
+        const undoServerDeleteButton = document.getElementById('undoServerDelete');
+        if (undoServerDeleteButton) {
+            undoServerDeleteButton.addEventListener('click', () => this.undoServerDelete());
+        }
+
+        document.querySelectorAll('.pagination-controls a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (!link.classList.contains('disabled')) {
+                    const href = link.getAttribute('href');
+                    const urlParams = new URLSearchParams(href.split('?')[1]);
+                    this.currentPage = parseInt(urlParams.get('page')) || 1;
+                    this.loadTableData();
+                    e.preventDefault();
+                }
+            });
+        });
+
+        const addFilterButton = document.getElementById('addFilter');
+        if (addFilterButton) {
+            addFilterButton.addEventListener('click', () => this.addFilter());
+        }
+
+        const clearFiltersButton = document.getElementById('clearFilters');
+        if (clearFiltersButton) {
+            clearFiltersButton.addEventListener('click', () => this.clearFilters());
+        }
+
+        const applyFiltersButton = document.getElementById('applyFilters');
+        if (applyFiltersButton) {
+            applyFiltersButton.addEventListener('click', () => this.applyFilters());
+        }
+
+        const exportDataButton = document.getElementById('exportData');
+        if (exportDataButton) {
+            exportDataButton.addEventListener('click', () => this.exportData());
+        }
+    }
+
+    initDatePickers() {
+        const dateRange = document.getElementById('date_range');
+        if (dateRange) {
+            flatpickr("#date_range", {
                 mode: "range",
                 dateFormat: "Y-m-d",
-                defaultDate: (currentFromDate && currentToDate) ? [currentFromDate, currentToDate] : [],
-                onChange: function(selectedDates, dateStr, instance) {
+                defaultDate: [this.fromDate, this.toDate].filter(d => d),
+                onChange: (selectedDates) => {
                     if (selectedDates.length === 2) {
-                        $("#from_date").val(instance.formatDate(selectedDates[0], "Y-m-d"));
-                        $("#to_date").val(instance.formatDate(selectedDates[1], "Y-m-d"));
-                        $("#filterForm").submit();
-                    } else if (selectedDates.length === 0) {
-                        $("#from_date").val("");
-                        $("#to_date").val("");
-                        $("#filterForm").submit();
-                    }
-                },
-                onClose: function(selectedDates, dateStr, instance) {
-                    if (selectedDates.length < 2 && selectedDates.length > 0) {
-                        instance.setDate([]);
-                        $("#from_date").val("");
-                        $("#to_date").val("");
-                        $("#filterForm").submit();
+                        this.fromDate = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                        this.toDate = flatpickr.formatDate(selectedDates[1], "Y-m-d");
+                        document.getElementById('from_date').value = this.fromDate;
+                        document.getElementById('to_date').value = this.toDate;
+                        this.currentPage = 1;
+                        this.loadTableData();
                     }
                 }
             });
-            console.log("Flatpickr initialized");
-
-            // --- Function to Show Custom Alert ---
-            function showCustomAlert(message) {
-                const alertDiv = $('<div class="custom-alert"></div>').text(message);
-                $('body').append(alertDiv);
-                setTimeout(() => {
-                    alertDiv.fadeOut(200, () => alertDiv.remove());
-                }, 30); // Display for 30ms
-            }
-
-            // --- DataTable Initialization ---
-            let dataTable = null;
-            if (columns.length > 0) {
-                try {
-                    dataTable = $('#data-table').DataTable({
-                        scrollX: true,
-                        scrollY: "75vh",
-                        scrollCollapse: true,
-                        paging: false,
-                        searching: false,
-                        info: false,
-                        ordering: false,
-                        dom: 'rt',
-                        destroy: true,
-                        data: data,
-                        columns: [
-                            {
-                                data: null,
-                                title: '<input type="checkbox" id="select_all_rows" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="Select all rows">',
-                                render: function(data, type, row) {
-                                    const rowId = row[primaryKey] || '';
-                                    return `<input type="checkbox" name="rows_to_delete" value="${rowId}" ${rowId ? '' : 'disabled'}>`;
-                                },
-                                className: 'dt-checkboxes',
-                                orderable: false,
-                                searchable: false
-                            },
-                            ...columns.map(col => ({
-                                data: col,
-                                title: col + (col !== primaryKey ? ` <input type="checkbox" name="columns_to_delete" value="${col}">` : ''),
-                                render: function(data, type, row) {
-                                    return data != null ? data : '';
-                                },
-                                orderable: false,
-                                searchable: false
-                            }))
-                        ],
-                        drawCallback: function() {
-                            // Reapply checkbox states after draw
-                            $('input[name="rows_to_delete"]').each(function() {
-                                if ($(this).data('was-checked')) {
-                                    $(this).prop('checked', true);
-                                }
-                            });
-                            // Update select all checkbox state
-                            const totalCheckboxes = $('input[name="rows_to_delete"]').not(':disabled').length;
-                            const checkedCheckboxes = $('input[name="rows_to_delete"]:checked').not(':disabled').length;
-                            const selectAllCheckbox = $('#select_all_rows');
-                            if (totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0) {
-                                selectAllCheckbox.prop('checked', true).attr('data-state', 'checked').attr('aria-checked', 'true');
-                            } else {
-                                selectAllCheckbox.prop('checked', false).attr('data-state', 'unchecked').attr('aria-checked', 'false');
-                            }
-                            console.log('Draw complete, reapplied', checkedCheckboxes, 'checkbox states, total checkboxes:', totalCheckboxes);
-                        },
-                        initComplete: function() {
-                            console.log('DataTable initialized with', dataTable.data().count(), 'rows');
-
-                            // Debug: Log checkbox counts
-                            const totalCheckboxes = $('input[name="rows_to_delete"]').length;
-                            const checkedCheckboxes = $('input[name="rows_to_delete"]:checked').length;
-                            console.log('Initial total checkboxes:', totalCheckboxes, 'Checked:', checkedCheckboxes);
-
-                            // Debug: Verify checkbox presence
-                            if ($('#select_all_rows').length) {
-                                console.log('Select All checkbox found in DOM');
-                            } else {
-                                console.error('Select All checkbox not found in DOM');
-                            }
-                        }
-                    });
-                } catch (dtError) {
-                    console.error('DataTable initialization failed:', dtError.message);
-                }
-            } else {
-                console.warn('No columns provided, skipping DataTable initialization');
-            }
-
-            // --- Select All Checkbox Handler ---
-            $(document).on('click keydown', '#select_all_rows', function(e) {
-                if (e.type === 'keydown' && e.key !== ' ' && e.key !== 'Enter') return;
-                if (e.type === 'keydown') e.preventDefault();
-
-                console.log('Select All event triggered, type:', e.type);
-
-                const isChecked = $(this).prop('checked');
-                console.log('Select All state, isChecked:', isChecked);
-
-                // Update all row checkboxes
-                const checkboxes = $('#data-table').find('input[name="rows_to_delete"]:not(:disabled)');
-                checkboxes.prop('checked', isChecked).data('was-checked', isChecked);
-
-                // Update select all checkbox attributes
-                $(this).attr({
-                    'aria-checked': isChecked ? 'true' : 'false',
-                    'data-state': isChecked ? 'checked' : 'unchecked'
-                });
-
-                // Log results
-                const checkedCount = checkboxes.filter(':checked').length;
-                console.log('Updated', checkboxes.length, 'checkboxes, checked:', checkedCount);
-
-                // Force DataTable redraw
-                if (dataTable) {
-                    dataTable.draw();
-                }
-            });
-
-            // --- Individual Checkbox Handler ---
-            $(document).on('change', 'input[name="rows_to_delete"]', function() {
-                $(this).data('was-checked', this.checked);
-                const totalCheckboxes = $('#data-table').find('input[name="rows_to_delete"]:not(:disabled)').length;
-                const checkedCheckboxes = $('#data-table').find('input[name="rows_to_delete"]:checked:not(:disabled)').length;
-                const selectAllCheckbox = $('#select_all_rows');
-
-                // Update Select All checkbox state
-                if (totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0) {
-                    selectAllCheckbox.prop('checked', true).attr({
-                        'aria-checked': 'true',
-                        'data-state': 'checked'
-                    });
-                } else {
-                    selectAllCheckbox.prop('checked', false).attr({
-                        'aria-checked': 'false',
-                        'data-state': 'unchecked'
-                    });
-                }
-                console.log('Individual checkbox changed, total:', totalCheckboxes, 'checked:', checkedCheckboxes);
-            });
-
-            // --- Main Search ---
-            let typingTimer;
-            const typingDelay = 500;
-            $('#main-search-input').on('input', function() {
-                console.log('Main search input changed:', $(this).val());
-                clearTimeout(typingTimer);
-                typingTimer = setTimeout(function() {
-                    $('#filterForm').submit();
-                }, typingDelay);
-            });
-
-            // --- Form Submission for Filters ---
-            $('#filterForm').on('submit', function(e) {
-                e.preventDefault();
-                console.log('Filter form submitted with search_query:', $('#main-search-input').val());
-
-                const url = new URL(window.location.href);
-                const params = new URLSearchParams(url.search);
-                params.set('page', 1);
-
-                const formData = $(this).serializeArray();
-                $.each(formData, function(i, field) {
-                    if (field.value) {
-                        params.set(field.name, field.value);
-                    } else {
-                        params.delete(field.name);
-                    }
-                });
-
-                const currentPerPage = "{{ per_page }}";
-                if (currentPerPage) {
-                    params.set('per_page', currentPerPage);
-                }
-
-                window.location.href = "{{ url_for('rename_data', table=table_name) }}?" + params.toString();
-            });
-
-            // --- Delete Form Submission Validation ---
-            $('#deleteForm').on('submit', function(e) {
-                const checkedRows = $('#data-table').find('input[name="rows_to_delete"]:checked');
-                const checkedColumns = $('input[name="columns_to_delete"]:checked');
-                const isRowDeletion = $(e.originalEvent.submitter).attr('name') === 'delete_rows';
-                const isColumnDeletion = $(e.originalEvent.submitter).attr('name') === 'delete_columns';
-
-                // Log form data
-                const formData = $(this).serializeArray();
-                const rowsToDelete = formData.filter(item => item.name === 'rows_to_delete').map(item => item.value);
-                console.log('Delete form submitted, rows_to_delete:', rowsToDelete);
-
-                if (isRowDeletion) {
-                    if (checkedRows.length === 0) {
-                        e.preventDefault();
-                        console.log('No rows selected for deletion');
-                        showCustomAlert('Please select at least one row to delete.');
-                        return;
-                    }
-
-                    let invalidRows = false;
-                    checkedRows.each(function() {
-                        const rowId = $(this).val();
-                        if (!rowId || rowId.trim() === '') {
-                            invalidRows = true;
-                            return false;
-                        }
-                    });
-                    if (invalidRows) {
-                        e.preventDefault();
-                        console.log('Invalid row IDs detected');
-                        showCustomAlert('One or more selected rows have invalid IDs. Please ensure all selected rows have valid IDs.');
-                        return;
-                    }
-
-                    if (!confirm(`Are you sure you want to delete ${checkedRows.length} row(s)?`)) {
-                        e.preventDefault();
-                        return;
-                    }
-                }
-
-                if (isColumnDeletion && checkedColumns.length === 0) {
-                    e.preventDefault();
-                    console.log('No columns selected for deletion');
-                    showCustomAlert('Please select at least one column to delete.');
-                    return;
-                }
-
-                if (isColumnDeletion) {
-                    if (!confirm(`Are you sure you want to delete ${checkedColumns.length} column(s)?`)) {
-                        e.preventDefault();
-                        return;
-                    }
-                }
-            });
-
-            console.log("rename.html script initialization complete.");
-        } catch (error) {
-            console.error('Error in script:', error.message);
         }
-    });
+
+        const bulkUpdateDateRange = document.getElementById('bulkUpdateDateRange');
+        if (bulkUpdateDateRange) {
+            flatpickr("#bulkUpdateDateRange", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                onChange: (selectedDates) => {
+                    if (selectedDates.length === 2) {
+                        document.getElementById('bulkUpdateFromDate').value = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                        document.getElementById('bulkUpdateToDate').value = flatpickr.formatDate(selectedDates[1], "Y-m-d");
+                    }
+                }
+            });
+        }
+
+        const bulkDeleteDateRange = document.getElementById('bulkDeleteDateRange');
+        if (bulkDeleteDateRange) {
+            flatpickr("#bulkDeleteDateRange", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                onChange: (selectedDates) => {
+                    if (selectedDates.length === 2) {
+                        document.getElementById('bulkDeleteFromDate').value = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                        document.getElementById('bulkDeleteToDate').value = flatpickr.formatDate(selectedDates[1], "Y-m-d");
+                    }
+                }
+            });
+        }
+
+        const bulkInsertDateRange = document.getElementById('bulkInsertDateRange');
+        if (bulkInsertDateRange) {
+            flatpickr("#bulkInsertDateRange", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                onChange: (selectedDates) => {
+                    if (selectedDates.length === 2) {
+                        document.getElementById('bulkInsertFromDate').value = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                        document.getElementById('bulkInsertToDate').value = flatpickr.formatDate(selectedDates[1], "Y-m-d");
+                    }
+                }
+            });
+        }
+
+        const serverDeleteDate = document.getElementById('serverDeleteDate');
+        if (serverDeleteDate) {
+            flatpickr("#serverDeleteDate", {
+                dateFormat: "Y-m-d",
+                onChange: (selectedDates) => {
+                    if (selectedDates.length === 1) {
+                        document.getElementById('serverDeleteDate').value = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                        this.populateServerList();
+                    }
+                }
+            });
+        }
+    }
+
+    async populateServerList() {
+        const serverSelect = document.getElementById('serverDeleteSelect');
+        const selectedDate = document.getElementById('serverDeleteDate').value;
+        if (!serverSelect || !selectedDate) return;
+
+        try {
+            const response = await axios.get(`{{ url_for('manage_database', table=table_name) }}`, {
+                params: {
+                    action: 'get_servers',
+                    server_date: selectedDate,
+                    ajax: 'true'
+                }
+            });
+            serverSelect.innerHTML = '<option value="">-- Select Server --</option>';
+            if (response.data.servers) {
+                response.data.servers.forEach(server => {
+                    const option = document.createElement('option');
+                    option.value = server;
+                    option.textContent = server;
+                    serverSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching servers:', error);
+            this.showAlert('Failed to fetch server list: ' + (error.response?.data?.error || error.message), 'danger');
+        }
+    }
+
+    async loadTableData() {
+        this.showLoading(true);
+        try {
+            const params = new URLSearchParams({
+                page: this.currentPage,
+                per_page: this.rowsPerPage,
+                search_query: this.searchQuery,
+                from_date: this.fromDate,
+                to_date: this.toDate,
+                ajax: 'true'
+            });
+            const url = `{{ url_for('manage_database', table=table_name) }}?${params}`;
+            const response = await axios.get(url);
+            this.data = response.data.data || [];
+            this.columns = response.data.columns || [];
+            this.currentPage = parseInt(response.data.page) || 1;
+            this.totalPages = parseInt(response.data.total_pages) || 1;
+            this.totalRows = parseInt(response.data.total_rows) || 0;
+            this.renderTable();
+            this.updatePagination();
+        } catch (error) {
+            console.error('Error loading data:', error);
+            this.showAlert('Error loading table data: ' + (error.response?.data?.error || error.message), 'danger');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    renderTable() {
+        const thead = document.getElementById('tableHead');
+        const tbody = document.getElementById('tableBody');
+        if (!thead || !tbody) {
+            console.error('Table elements not found');
+            return;
+        }
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        if (!this.columns || this.columns.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="100">No columns available.</td></tr>';
+            return;
+        }
+
+        if (!this.data || this.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="100">No data available.</td></tr>';
+            return;
+        }
+
+        // Header row
+        const headerRow = document.createElement('tr');
+        const selectAllTh = document.createElement('th');
+        selectAllTh.innerHTML = '<input type="checkbox" id="selectAll">';
+        headerRow.appendChild(selectAllTh);
+
+        this.columns.forEach(column => {
+            const th = document.createElement('th');
+            th.innerHTML = `
+                <div style="cursor: pointer;" onclick="dbManager.sortBy('${column}')">
+                    ${column}
+                    ${this.sortColumn === column ? (this.sortDirection === 'asc' ? '↑' : '↓') : ''}
+                </div>
+            `;
+            headerRow.appendChild(th);
+        });
+
+        const actionsTh = document.createElement('th');
+        actionsTh.textContent = 'Actions';
+        headerRow.appendChild(actionsTh);
+        thead.appendChild(headerRow);
+
+        // Bind select all
+        const selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', (e) => {
+                this.selectAll(e.target.checked);
+            });
+        }
+
+        // Data rows
+        this.data.forEach(row => {
+            const tr = document.createElement('tr');
+            if (this.selectedRows.has(row[this.primaryKey])) {
+                tr.classList.add('selected');
+            }
+
+            const selectTd = document.createElement('td');
+            selectTd.innerHTML = `<input type="checkbox" class="row-select" data-row-id="${row[this.primaryKey]}" ${this.selectedRows.has(row[this.primaryKey]) ? 'checked' : ''}>`;
+            tr.appendChild(selectTd);
+
+            this.columns.forEach(column => {
+                const td = document.createElement('td');
+                td.classList.add('editable-cell');
+                td.textContent = row[column] ?? '';
+                td.addEventListener('dblclick', () => this.editCell(td, row, column));
+                tr.appendChild(td);
+            });
+
+            const actionsTd = document.createElement('td');
+            actionsTd.innerHTML = `
+                <form method="POST" action="{{ url_for('manage_database', table=table_name) }}" style="display:inline;">
+                    <input type="hidden" name="action" value="delete_rows">
+                    <input type="hidden" name="rows_to_delete" value="${row[this.primaryKey]}">
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                </form>
+            `;
+            tr.appendChild(actionsTd);
+            tbody.appendChild(tr);
+        });
+
+        // Bind row selection
+        document.querySelectorAll('.row-select').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const id = e.target.dataset.rowId;
+                if (e.target.checked) {
+                    this.selectedRows.add(id);
+                } else {
+                    this.selectedRows.delete(id);
+                }
+                this.updateSelectedActions();
+            });
+        });
+
+        this.updateSelectedActions();
+    }
+
+    editCell(cell, row, column) {
+        const currentValue = cell.textContent;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentValue;
+        input.className = 'form-control';
+        cell.innerHTML = '';
+        cell.appendChild(input);
+        input.focus();
+
+        const saveEdit = async () => {
+            const newValue = input.value;
+            if (newValue !== currentValue) {
+                // Store change in editHistory
+                this.editHistory.push({
+                    rowId: row[this.primaryKey],
+                    column: column,
+                    oldValue: currentValue,
+                    newValue: newValue
+                });
+                await this.updateCell(row[this.primaryKey], column, newValue);
+            }
+            cell.textContent = newValue;
+        };
+
+        input.addEventListener('blur', saveEdit);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveEdit();
+            }
+        });
+    }
+
+    async updateCell(rowId, column, newData) {
+        try {
+            const response = await axios.post(`{{ url_for('manage_database', table=table_name) }}`, {
+                action: 'edit_cell',
+                row_id: rowId,
+                column: column,
+                new_data: newData
+            });
+            this.showAlert('Cell updated successfully', 'success');
+            this.loadTableData();
+        } catch (error) {
+            console.error('Error updating cell:', error);
+            this.showAlert('Failed to update cell: ' + (error.response?.data?.error || error.message), 'danger');
+        }
+    }
+
+    async undoChange() {
+        if (this.editHistory.length === 0) {
+            this.showAlert('No cell changes to undo', 'warning');
+            return;
+        }
+
+        const lastChange = this.editHistory.pop();
+        try {
+            await axios.post(`{{ url_for('manage_database', table=table_name) }}`, {
+                action: 'edit_cell',
+                row_id: lastChange.rowId,
+                column: lastChange.column,
+                new_data: lastChange.oldValue
+            });
+            this.showAlert('Change undone successfully', 'success');
+            this.loadTableData();
+        } catch (error) {
+            console.error('Error undoing change:', error);
+            this.showAlert('Failed to undo change: ' + (error.response?.data?.error || error.message), 'danger');
+        }
+    }
+
+    async undoServerDelete() {
+        if (this.serverDeleteHistory.length === 0) {
+            this.showAlert('No server deletions to undo', 'warning');
+            return;
+        }
+
+        const lastDelete = this.serverDeleteHistory.pop();
+        try {
+            const response = await axios.post(`{{ url_for('manage_database', table=table_name) }}`, {
+                action: 'undo_server_delete',
+                deleted_rows: lastDelete.rows
+            });
+            this.showAlert(`Restored ${response.data.affected_rows} rows`, 'success');
+            this.loadTableData();
+        } catch (error) {
+            console.error('Error undoing server delete:', error);
+            this.showAlert('Failed to undo server delete: ' + (error.response?.data?.error || error.message), 'danger');
+        }
+    }
+
+    selectAll(checked) {
+        this.selectedRows.clear();
+        if (checked) {
+            this.data.forEach(row => {
+                this.selectedRows.add(row[this.primaryKey]);
+            });
+        }
+
+        document.querySelectorAll('.row-select').forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+
+        this.updateSelectedActions();
+    }
+
+    updateSelectedActions() {
+        const count = this.selectedRows.size;
+        const actionsDiv = document.getElementById('selectedActions');
+        const countSpan = document.getElementById('selectedCount');
+        const selectedRowsInput = document.getElementById('selectedRowsInput');
+
+        if (count > 0) {
+            actionsDiv.classList.remove('hidden');
+            countSpan.textContent = `${count} rows selected`;
+            selectedRowsInput.value = Array.from(this.selectedRows).join(', ');
+        } else {
+            actionsDiv.classList.add('hidden');
+        }
+    }
+
+    sortBy(column) {
+        if (this.sortColumn === column) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
+        this.loadTableData();
+    }
+
+    addFilter() {
+        const filterList = document.getElementById('filterList');
+        const filterDiv = document.createElement('div');
+        filterDiv.className = 'form-group flex gap-2';
+        filterDiv.innerHTML = `
+            <select class="form-control" name="filter_column">
+                <option value="">-- Select Column --</option>
+                ${this.columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+            </select>
+            <select class="form-control" name="filter_condition">
+                <option value="equals">Equals</option>
+                <option value="contains">Contains</option>
+                <option value="starts">Starts With</option>
+                <option value="ends">Ends With</option>
+            </select>
+            <input type="text" class="form-control" name="filter_value" placeholder="Value">
+            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+        `;
+        filterList.appendChild(filterDiv);
+    }
+
+    clearFilters() {
+        document.getElementById('filterList').innerHTML = '';
+        this.filters = [];
+        this.loadTableData();
+    }
+
+    applyFilters() {
+        this.filters = [];
+        document.querySelectorAll('#filterList .form-group').forEach(group => {
+            const column = group.querySelector('[name="filter_column"]').value;
+            const condition = group.querySelector('[name="filter_condition"]').value;
+            const value = group.querySelector('[name="filter_value"]').value;
+            if (column && value) {
+                this.filters.push({ column, condition, value });
+            }
+        });
+        this.loadTableData();
+    }
+
+    exportData() {
+        const format = document.getElementById('exportFormat').value;
+        const includeHeaders = document.getElementById('exportHeaders').checked;
+        const filteredOnly = document.getElementById('exportFiltered').checked;
+
+        let content = '';
+        let filename = `${this.tableName}_export`;
+        let mimeType = 'text/plain';
+
+        const dataToExport = filteredOnly ? this.data : this.data;
+
+        switch (format) {
+            case 'csv':
+                content = this.exportToCSV(dataToExport, includeHeaders);
+                filename += '.csv';
+                mimeType = 'text/csv';
+                break;
+            case 'excel':
+                content = this.exportToCSV(dataToExport, includeHeaders);
+                filename += '.csv';
+                mimeType = 'text/csv';
+                break;
+            case 'sql':
+                content = this.exportToSQL(dataToExport);
+                filename += '.sql';
+                mimeType = 'text/plain';
+                break;
+        }
+
+        this.downloadFile(content, filename, mimeType);
+        this.showAlert('Data exported successfully!', 'success');
+    }
+
+    exportToCSV(data, includeHeaders) {
+        let csv = '';
+        if (includeHeaders) {
+            csv += this.columns.join(',') + '\n';
+        }
+        data.forEach(row => {
+            const values = this.columns.map(col => `"${String(row[col] ?? '').replace(/"/g, '')}"`);
+            csv += values.join(',') + '\n';
+        });
+        return csv;
+    }
+
+    exportToSQL(data) {
+        let sql = `-- SQL Export for table: ${this.tableName}\n\n`;
+        data.forEach(row => {
+            const columns = this.columns.join('`, `');
+            const values = this.columns.map(col => `'${String(row[col] ?? '').replace(/'/g, '')}'`).join(', ');
+            sql += `INSERT INTO \`${this.tableName}\` (\`${columns}\`) VALUES (${values});\n`;
+        });
+        return sql;
+    }
+
+    downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    updatePagination() {
+        document.getElementById('paginationInfo').textContent = 
+            `Showing ${(this.currentPage - 1) * this.rowsPerPage + 1} to ${Math.min(this.currentPage * this.rowsPerPage, this.totalRows)} of ${this.totalRows} results`;
+        document.getElementById('pageInfo').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
+    }
+
+    switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        const tabContent = document.getElementById(`tab-${tabName}`);
+        const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+        if (tabContent && tabButton) {
+            tabContent.classList.add('active');
+            tabButton.classList.add('active');
+        }
+        if (tabName === 'bulk') {
+            this.populateServerList();
+        }
+    }
+
+    showAlert(message, type = 'info') {
+        const alertContainer = document.getElementById('alertContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        alertContainer.appendChild(alert);
+        setTimeout(() => {
+            if (alert.parentElement) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+
+    showLoading(show) {
+        document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+}
+
+try {
+    const dbManager = new DatabaseManager();
+} catch (error) {
+    console.error('Error initializing DatabaseManager:', error);
+    alert('Failed to initialize the page. Check the console for details.');
+}
 </script>
 {% endblock %}

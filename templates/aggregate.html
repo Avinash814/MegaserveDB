@@ -11,129 +11,38 @@
         margin-top: 20px;
     }
     .table-smaller {
-        font-size: 0.85rem; /* Slightly larger for readability */
+        font-size: 0.75rem; /* Smaller text size */
         width: 100%;
-        table-layout: auto; /* Allow table to adjust column widths */
     }
     .table-smaller th,
     .table-smaller td {
-        padding: 0.4rem; /* Slightly increased padding for touch targets */
-        white-space: nowrap; /* Prevent text wrapping in cells */
+        padding: 0.3rem; /* Reduced padding for compact table */
     }
 
     /* Card Styling */
     .compact-card .card-body {
-        padding: 0.75rem; /* Adjusted padding for balance */
+        padding: 0.5rem; /* Reduced padding */
     }
     .compact-card h5 {
-        font-size: 1rem; /* Consistent title size */
-        margin-bottom: 0.5rem;
+        font-size: 1rem; /* Smaller title */
+        margin-bottom: 0.4rem;
     }
     .compact-card p {
-        font-size: 0.85rem; /* Readable text size */
+        font-size: 0.8rem; /* Smaller text */
     }
     .compact-card .alert {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         padding: 0.5rem;
-        margin-bottom: 0.5rem;
     }
     .compact-card .btn {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.8rem;
-        width: auto; /* Allow buttons to size naturally */
-    }
-
-    /* Button Styling */
-    .btn-grd-primary, .btn-grd-secondary, .btn-grd-success, .btn-grd-warning {
-        width: 100%; /* Full width on mobile */
-        margin-bottom: 0.5rem; /* Space between stacked buttons */
-    }
-
-    /* Dropdown Styling */
-    .user-id-dropdown {
-        max-height: 200px;
-        overflow-y: auto; /* Scrollable dropdown on mobile */
-        width: 100%; /* Full width */
-    }
-
-    /* Modal Styling */
-    .modal-dialog {
-        max-width: 90%; /* Limit modal width on mobile */
-        margin: 1rem auto; /* Center with reduced margin */
-    }
-    .modal-body {
-        padding: 1rem;
-    }
-
-    /* Form Styling */
-    .form-control, .form-select {
-        font-size: 0.85rem; /* Readable input size */
-        padding: 0.4rem;
-    }
-
-    /* Responsive Adjustments */
-    @media (max-width: 576px) {
-        .container {
-            padding: 0.5rem; /* Reduced padding for mobile */
-        }
-
-        h3.text-center {
-            font-size: 1.25rem; /* Smaller heading */
-        }
-
-        .table-smaller th,
-        .table-smaller td {
-            font-size: 0.75rem; /* Smaller text on mobile */
-            padding: 0.3rem;
-        }
-
-        .compact-card .card-body {
-            padding: 0.5rem;
-        }
-
-        .compact-card h5 {
-            font-size: 0.9rem;
-        }
-
-        .compact-card p, .compact-card .alert {
-            font-size: 0.75rem;
-        }
-
-        .compact-card .btn {
-            font-size: 0.75rem;
-            padding: 0.3rem 0.6rem;
-        }
-
-        .btn-grd-primary, .btn-grd-secondary, .btn-grd-success, .btn-grd-warning {
-            width: 100%; /* Ensure full width */
-        }
-
-        .dropdown-menu {
-            width: 100%; /* Full width dropdown */
-        }
-
-        .modal-dialog {
-            max-width: 95%; /* Nearly full width on small screens */
-        }
-
-        .form-check-label {
-            font-size: 0.75rem; /* Smaller labels in dropdown */
-        }
-    }
-
-    @media (min-width: 577px) {
-        .btn-grd-primary, .btn-grd-secondary, .btn-grd-success, .btn-grd-warning {
-            width: auto; /* Buttons inline on larger screens */
-            margin-right: 0.5rem; /* Space between buttons */
-            margin-bottom: 0;
-        }
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
     }
 </style>
-
 <!-- Aggregate Section -->
-<div id="admin-aggregate" class="section active">
+<div id="aggregate" class="section active">
     <div class="container">
-        <h3 class="text-center mb-4">MTM for All Users</h3>
+        <h1 class="text-center mb-4">MTM for All Users</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -168,10 +77,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="totalMtmForm" action="{{ url_for('admin.admin_total_mtm') }}" method="POST">
+                        <form id="totalMtmForm" action="{{ url_for('aggregate.total_mtm') }}" method="POST">
                             <div class="mb-3">
                                 <label for="selected_date_mtm" class="form-label">Select Date</label>
-                            <input type="date" class="form-control" id="selected_date_mtm" name="selected_date" required>
+                                <input type="date" class="form-control" id="selected_date_mtm" name="selected_date" required>
                             </div>
                             <button type="submit" class="btn btn-grd-primary">Apply</button>
                         </form>
@@ -185,7 +94,7 @@
             <div class="card-body">
                 <h5 class="card-title">Select Users to Include</h5>
                 <p class="card-text">Choose which user IDs to include in the Total MTM calculations. Unchecked users will be excluded.</p>
-                <form action="{{ url_for('admin.include_users') }}" method="POST">
+                <form action="{{ url_for('aggregate.include_users') }}" method="POST">
                     <input type="hidden" name="selected_date" value="{{ selected_date }}">
                     <div class="dropdown">
                         <button class="btn btn-grd-secondary dropdown-toggle" type="button" id="userIdDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -235,7 +144,7 @@
                 {% if excluded_users %}
                     <div class="alert alert-info mb-3">
                         Excluded Users: <strong>{{ excluded_users|join(', ') }}</strong>
-                        <form action="{{ url_for('admin.reset_exclusions') }}" method="POST" style="display:inline;">
+                        <form action="{{ url_for('aggregate.reset_exclusions') }}" method="POST" style="display:inline;">
                             <input type="hidden" name="selected_date" value="{{ selected_date }}">
                             <button type="submit" class="btn btn-sm btn-grd-warning ms-2">Reset Exclusions</button>
                         </form>
@@ -269,7 +178,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <a href="{{ url_for('admin.admin_aggregate_page', selected_date=selected_date, export='csv') }}" class="btn btn-grd-success">Export to CSV</a>
+                    <a href="{{ url_for('aggregate.aggregate_page', selected_date=selected_date, export='csv') }}" class="btn btn-grd-success">Export to CSV</a>
                 {% endif %}
             </div>
         </div>
@@ -284,7 +193,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Upload Orderbook Data and Select User</h5>
                         <p class="card-text">Upload an Excel file containing orderbook data and select a User ID to calculate realised profit.</p>
-                        <form id="realisedProfitForm" action="{{ url_for('admin.realised_profit') }}" method="POST" enctype="multipart/form-data">
+                        <form id="realisedProfitForm" action="{{ url_for('aggregate.realised_profit') }}" method="POST" enctype="multipart/form-data">
                             <div class="mb-3">
                                 <label for="file_upload" class="form-label">Upload Excel File</label>
                                 <input type="file" class="form-control" id="file_upload" name="file_upload" accept=".xlsx,.xls" required>
@@ -338,7 +247,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <a href="{{ url_for('admin.realised_profit', export='csv') }}" class="btn btn-grd-success">Export to CSV</a>
+                        <a href="{{ url_for('aggregate.realised_profit', export='csv') }}" class="btn btn-grd-success">Export to CSV</a>
                     </div>
                 </div>
                 {% endif %}

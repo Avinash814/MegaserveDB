@@ -19,7 +19,7 @@ def get_db_connection():
     try:
         # Replace with your actual database credentials
         db_user = os.getenv('DB_USER', 'root')
-        db_password = os.getenv('DB_PASSWORD', 'amanrai123')
+        db_password = os.getenv('DB_PASSWORD', 'Welcome987')
         db_host = os.getenv('DB_HOST', 'localhost')
         db_name = os.getenv('DB_NAME', 'MST')
         

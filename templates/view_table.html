@@ -34,6 +34,8 @@
                     <input type="hidden" name="to_date" id="to_date" value="{{ to_date or '' }}">
                     <input type="hidden" name="page" id="page" value="{{ page }}">
                     <input type="hidden" name="rows_per_page" id="rows_per_page" value="{{ rows_per_page }}">
+                    <input type="hidden" name="sort_column" id="sort_column" value="{{ sort_column or '' }}">
+                    <input type="hidden" name="sort_direction" id="sort_direction" value="{{ sort_direction or '' }}">
                 </div>
             </form>
             
@@ -51,7 +53,7 @@
 
                 {% if session['role'] == 'admin' %}
                     <!-- Download Link for All Pages -->
-                    <a href="{{ url_for('download_table', table=table, download_all='true', from_date=from_date or '', to_date=to_date or '', search_query=search_query or '') }}" id="downloadLink" class="p-0 m-0 bg-transparent border-0 shadow-none" style="height: 32px; width: 32px; display: flex; align-items: center; justify-content: center;">
+                    <a href="{{ url_for('download_table', table=table, download_all='true', from_date=from_date or '', to_date=to_date or '', search_query=search_query or '', sort_column=sort_column or '', sort_direction=sort_direction or '') }}" id="downloadLink" class="p-0 m-0 bg-transparent border-0 shadow-none" style="height: 32px; width: 32px; display: flex; align-items: center; justify-content: center;">
                         <svg width="22" height="22" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                             <path d="M7.50005 1.04999C7.74858 1.04999 7.95005 1.25146 7.95005 1.49999V8.41359L10.1819 6.18179C10.3576 6.00605 10.6425 6.00605 10.8182 6.18179C10.994 6.35753 10.994 6.64245 10.8182 6.81819L7.81825 9.81819C7.64251 9.99392 7.35759 9.99392 7.18185 9.81819L4.18185 6.81819C4.00611 6.64245 4.00611 6.35753 4.18185 6.18179C4.35759 6.00605 4.64251 6.00605 4.81825 6.18179L7.05005 8.41359V1.49999C7.05005 1.25146 7.25152 1.04999 7.50005 1.04999ZM2.5 10C2.77614 10 3 10.2239 3 10.5V12C3 12.5539 3.44565 13 3.99635 13H11.0012C11.5529 13 12 12.5528 12 12V10.5C12 10.2239 12.2239 10 12.5 10C12.7761 10 13 10.2239 13 10.5V12C13 13.1041 12.1062 14 11.0012 14H3.99635C2.89019 14 2 13.103 2 12V10.5C2 10.2239 2.22386 10 2.5 10Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
                         </svg>
@@ -86,9 +88,25 @@
                 <thead>
                     <!-- Column Headers -->
                     <tr>
-                        <th data-column="0">row_id</th>
+                        <th data-column="0" class="sortable" onclick="sortColumn('row_id', 0)">
+                            <div class="d-flex align-items-center">
+                                <span>row_id</span>
+                                <div class="sort-icons ms-2">
+                                    <div class="sort-icon up" id="sort-up-0"></div>
+                                    <div class="sort-icon down" id="sort-down-0"></div>
+                                </div>
+                            </div>
+                        </th>
                         {% for column in columns[1:] %}
-                            <th data-column="{{ loop.index }}">{{ column }}</th>
+                            <th data-column="{{ loop.index }}" class="sortable" onclick="sortColumn('{{ column }}', {{ loop.index }})">
+                                <div class="d-flex align-items-center">
+                                    <span>{{ column }}</span>
+                                    <div class="sort-icons ms-2">
+                                        <div class="sort-icon up" id="sort-up-{{ loop.index }}"></div>
+                                        <div class="sort-icon down" id="sort-down-{{ loop.index }}"></div>
+                                    </div>
+                                </div>
+                            </th>
                         {% endfor %}
                     </tr>
                     <!-- Search Row -->
@@ -99,7 +117,7 @@
                         {% for column in columns[1:] %}
                             <td data-column="{{ loop.index }}">
                                 {% set column_lower = column|lower %}
-                                {% if column_lower in ['algo', 'server', 'enabled', 'status', 'order_type', 'product', 'validity','strategy_tag', 'logged_in', 'sqoff_done', 'broker', 'operator', 'log_type','transaction','exchange'] %}
+                                {% if column_lower in ['algo', 'server', 'enabled', 'status','dte', 'order_type', 'product', 'validity','strategy_tag', 'logged_in', 'sqoff_done', 'broker', 'operator', 'log_type','transaction','exchange'] %}
                                     <div class="dropdown">
                                         <button class="dropdown-toggle btn btn-sm btn-outline-secondary w-100" type="button" data-column="{{ loop.index }}">
                                             Filter...
@@ -141,6 +159,8 @@
             <input type="hidden" name="search_query" id="pagination_search_query" value="{{ search_query if search_query else '' }}">
             <input type="hidden" name="from_date" id="pagination_from_date" value="{{ from_date if from_date else '' }}">
             <input type="hidden" name="to_date" id="pagination_to_date" value="{{ to_date if to_date else '' }}">
+            <input type="hidden" name="sort_column" id="pagination_sort_column" value="{{ sort_column or '' }}">
+            <input type="hidden" name="sort_direction" id="pagination_sort_direction" value="{{ sort_direction or '' }}">
             {% for key, value in request.args.items() %}
                 {% if key.startswith('column_') %}
                     <input type="hidden" name="{{ key }}" id="pagination_{{ key }}" value="{{ value }}">
@@ -153,10 +173,10 @@
                 <option value="1500" {% if rows_per_page == 1500 %}selected{% endif %}>1500</option>
                 <option value="3000" {% if rows_per_page == 3000 %}selected{% endif %}>3000</option>
             </select>
-            <span id="page-info" class="ms-2">Page {{ page }} of {{ total_pages }}</span>
+            <span id="page-info" class="ms-2">Page {{ page }} of {{ total_pages }} ({{ total_results }} results)</span>
             <a href="#" onclick="fetchTableData(1); return false;" class="btn btn-sm btn-outline-primary {% if page <= 1 %}disabled{% endif %}" id="first-page">«</a>
-            <a href="#" onclick="fetchTableData( page - 1 ); return false;" class="btn btn-sm btn-outline-primary {% if page <= 1 %}disabled{% endif %}" id="prev-page">‹</a>
-            <a href="#" onclick="fetchTableData( page + 1 ); return false;" class="btn btn-sm btn-outline-primary {% if page >= total_pages %}disabled{% endif %}" id="next-page">›</a>
+            <a href="#" onclick="fetchTableData({{ page - 1 }}); return false;" class="btn btn-sm btn-outline-primary {% if page <= 1 %}disabled{% endif %}" id="prev-page">‹</a>
+            <a href="#" onclick="fetchTableData({{ page + 1 }}); return false;" class="btn btn-sm btn-outline-primary {% if page >= total_pages %}disabled{% endif %}" id="next-page">›</a>
             <a href="#" onclick="fetchTableData({{ total_pages }}); return false;" class="btn btn-sm btn-outline-primary {% if page >= total_pages %}disabled{% endif %}" id="last-page">»</a>
         </div>
     </div>
@@ -242,6 +262,31 @@
             max-height: 300px;
             overflow-y: auto;
         }
+        .sortable {
+            cursor: pointer;
+        }
+        .sort-icons {
+            display: flex;
+            flex-direction: column;
+            margin-left: 0.5rem;
+        }
+        .sort-icon {
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+        }
+        .sort-icon.up {
+            border-bottom: 4px solid #9ca3af;
+            margin-bottom: 1px;
+        }
+        .sort-icon.down {
+            border-top: 4px solid #9ca3af;
+        }
+        .sort-icon.active {
+            border-bottom-color: #3b82f6;
+            border-top-color: #3b82f6;
+        }
     </style>
 
     <script>
@@ -250,6 +295,8 @@
             const dateRangeInput = document.getElementById('date_range');
             const fromDateInput = document.getElementById('from_date');
             const toDateInput = document.getElementById('to_date');
+            const sortColumnInput = document.getElementById('sort_column');
+            const sortDirectionInput = document.getElementById('sort_direction');
             const downloadLink = document.getElementById('downloadLink');
             const searchForm = document.getElementById('searchForm');
             const searchInput = document.getElementById('search_query');
@@ -258,6 +305,22 @@
             const columnSearchInputs = document.querySelectorAll('.column-search');
             const columnToggleButton = document.getElementById('columnToggleButton');
             const columnTogglePopup = document.getElementById('columnTogglePopup');
+            let currentSort = { column: "{{ sort_column or '' }}", direction: "{{ sort_direction or '' }}" };
+
+            // Initialize sort indicators
+            if (currentSort.column) {
+                const columnIndex = Array.from(document.querySelectorAll('th')).findIndex(
+                    th => th.querySelector('span')?.textContent === currentSort.column
+                );
+                if (columnIndex !== -1) {
+                    const activeIcon = currentSort.direction === 'asc' ? 
+                        document.getElementById(`sort-up-${columnIndex}`) : 
+                        document.getElementById(`sort-down-${columnIndex}`);
+                    if (activeIcon) {
+                        activeIcon.classList.add('active');
+                    }
+                }
+            }
 
             // Toggle popup visibility for column toggle
             columnToggleButton.addEventListener('click', function () {
@@ -327,7 +390,7 @@
                 {% for i in range(columns|length) %}
                     {% set column = columns[i] %}
                     {% set column_lower = column|lower %}
-                    {% if column_lower in ['algo', 'server', 'enabled', 'status', 'order_type', 'product', 'validity', 'logged_in', 'sqoff_done','strategy_tag', 'broker', 'operator', 'log_type','transaction','exchange'] %}
+                    {% if column_lower in ['algo', 'server', 'enabled', 'status', 'dte','order_type', 'product', 'validity', 'strategy_tag', 'logged_in', 'sqoff_done','broker', 'operator', 'log_type','transaction','exchange'] %}
                         {{ i }}: [{% for row in data %}'{{ row[column]|string }}'{% if not loop.last %},{% endif %}{% endfor %}],
                     {% endif %}
                 {% endfor %}
@@ -356,7 +419,7 @@
             });
 
             // Clear filters
-            const clearFilterButtons = document.querySelectorAll('.clear-filter');
+            const clearFilterButtons = document.querySelectorAll('.dropdown-item.clear-filter');
             clearFilterButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     const columnIndex = this.getAttribute('data-column');
@@ -396,10 +459,10 @@
                 });
 
                 // Update pagination (simplified for client-side filtering)
-                const visibleRows = table.querySelectorAll('tbody tr:not Row-hidden)').length;
+                const visibleRows = table.querySelectorAll('tbody tr:not(.row-hidden)').length;
                 const rowsPerPage = parseInt(rowsPerPageSelect.value);
                 const totalPages = Math.ceil(visibleRows / rowsPerPage);
-                document.getElementById('page-info').textContent = `Page ${Math.min(page, totalPages)} of ${totalPages}`;
+                document.getElementById('page-info').textContent = `Page ${Math.min({{ page }}, totalPages)} of ${totalPages}`;
             }
 
             flatpickr(dateRangeInput, {
@@ -529,6 +592,42 @@
                 fetchTableData(1);
             });
 
+            // Sort column function
+            window.sortColumn = function(columnName, columnIndex) {
+                let direction = 'asc';
+                if (currentSort.column === columnName) {
+                    direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                }
+                currentSort = { column: columnName, direction: direction };
+
+                // Update sort icons
+                document.querySelectorAll('.sort-icon').forEach(icon => {
+                    icon.classList.remove('active');
+                });
+                const activeIcon = direction === 'asc' ? 
+                    document.getElementById(`sort-up-${columnIndex}`) : 
+                    document.getElementById(`sort-down-${columnIndex}`);
+                if (activeIcon) {
+                    activeIcon.classList.add('active');
+                }
+
+                // Update hidden inputs
+                sortColumnInput.value = columnName;
+                sortDirectionInput.value = direction;
+                document.getElementById('pagination_sort_column').value = columnName;
+                document.getElementById('pagination_sort_direction').value = direction;
+
+                // Update download link
+                if (downloadLink) {
+                    const downloadUrl = new URL(downloadLink.href);
+                    downloadUrl.searchParams.set('sort_column', columnName);
+                    downloadUrl.searchParams.set('sort_direction', direction);
+                    downloadLink.href = downloadUrl.toString();
+                }
+
+                fetchTableData(1);
+            };
+
             window.fetchTableData = function(page) {
                 const searchQuery = searchInput.value;
                 const fromDate = fromDateInput.value;
@@ -549,6 +648,10 @@
                 url.searchParams.set('to_date', toDate);
                 url.searchParams.set('page', page);
                 url.searchParams.set('rows_per_page', rowsPerPage);
+                if (currentSort.column) {
+                    url.searchParams.set('sort_column', currentSort.column);
+                    url.searchParams.set('sort_direction', currentSort.direction);
+                }
                 Object.keys(columnSearchTerms).forEach(key => {
                     url.searchParams.set(key, columnSearchTerms[key]);
                 });
@@ -560,6 +663,13 @@
                     else downloadUrl.searchParams.delete('from_date');
                     if (toDate) downloadUrl.searchParams.set('to_date', toDate);
                     else downloadUrl.searchParams.delete('to_date');
+                    if (currentSort.column) {
+                        downloadUrl.searchParams.set('sort_column', currentSort.column);
+                        downloadUrl.searchParams.set('sort_direction', currentSort.direction);
+                    } else {
+                        downloadUrl.searchParams.delete('sort_column');
+                        downloadUrl.searchParams.delete('sort_direction');
+                    }
                     Object.keys(columnSearchTerms).forEach(key => {
                         downloadUrl.searchParams.set(key, columnSearchTerms[key]);
                     });
@@ -609,10 +719,12 @@
                         tbody.appendChild(tr);
                     });
 
-                    document.getElementById('page-info').textContent = `Page ${data.page} of ${data.total_pages}`;
+                    document.getElementById('page-info').textContent = `Page ${data.page} of ${data.total_pages} (${data.total_results} results)`;
                     document.getElementById('pagination_search_query').value = data.search_query;
                     document.getElementById('pagination_from_date').value = data.from_date;
                     document.getElementById('pagination_to_date').value = data.to_date;
+                    document.getElementById('pagination_sort_column').value = data.sort_column || '';
+                    document.getElementById('pagination_sort_direction').value = data.sort_direction || '';
 
                     // Update column search hidden inputs
                     columnSearchInputs.forEach(input => {
@@ -665,6 +777,25 @@
                     Object.keys(uniqueValues).forEach(columnIndex => {
                         applyFilters(columnIndex);
                     });
+
+                    // Update sort indicators after fetch
+                    if (data.sort_column) {
+                        currentSort = { column: data.sort_column, direction: data.sort_direction };
+                        const columnIndex = Array.from(document.querySelectorAll('th')).findIndex(
+                            th => th.querySelector('span')?.textContent === data.sort_column
+                        );
+                        if (columnIndex !== -1) {
+                            document.querySelectorAll('.sort-icon').forEach(icon => {
+                                icon.classList.remove('active');
+                            });
+                            const activeIcon = data.sort_direction === 'asc' ? 
+                                document.getElementById(`sort-up-${columnIndex}`) : 
+                                document.getElementById(`sort-down-${columnIndex}`);
+                            if (activeIcon) {
+                                activeIcon.classList.add('active');
+                            }
+                        }
+                    }
                 })
                 .catch(error => console.error('Error fetching table data:', error));
             };

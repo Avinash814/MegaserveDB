@@ -60,9 +60,10 @@
                     <table class="table table-bordered">
                         <tbody>
                             {% for table in tables %}
+                                {% set display_name = 'All Users' if table == 'users' else 'Summary Orderbook' if table == 'orderbook' else 'Dialpay Data' if table == 'dialpay' else table %}
                                 <ul class="list-group">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ table }}
+                                        {{ display_name }}
                                         <div class="table-actions">
                                             <a href="{{ url_for('view_table', table=table) }}" class="btn btn-sm btn-primary">View</a>
                                             <!-- <a href="{{ url_for('search_table', table=table) }}" class="btn btn-sm btn-secondary">Search</a> -->
